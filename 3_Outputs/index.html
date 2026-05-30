@@ -1,0 +1,1363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>This Day in the Pacific War</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg:        oklch(0.165 0.018 252);
+    --bg-2:      oklch(0.205 0.020 252);
+    --panel:     oklch(0.205 0.016 252);
+    --paper:     oklch(0.215 0.014 74);   /* warm dark "aged paper" */
+    --paper-2:   oklch(0.185 0.013 70);
+    --ink:       oklch(0.905 0.035 84);   /* cream / manila */
+    --ink-dim:   oklch(0.74 0.030 84);
+    --ink-faint: oklch(0.55 0.022 80);
+    --line:      oklch(0.34 0.014 252);
+    --line-soft: oklch(0.28 0.012 252);
+    --accent:    #c0392f;
+
+    --font-ui:   "IBM Plex Sans", system-ui, sans-serif;
+    --font-type: "Courier Prime", "Courier New", monospace;
+    --font-serif:"Spectral", Georgia, serif;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-ui);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow: hidden;
+  }
+  ::selection { background: color-mix(in oklch, var(--accent) 45%, transparent); color: #fff; }
+
+  #root { height: 100%; }
+  .app {
+    height: 100%;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    min-width: 0;
+  }
+
+  /* faint diagonal field over the whole shell */
+  body::before {
+    content: "";
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background:
+      radial-gradient(120% 90% at 50% -10%, oklch(0.24 0.03 252 / 0.55), transparent 60%),
+      radial-gradient(120% 120% at 50% 120%, oklch(0.13 0.02 252 / 0.6), transparent 55%);
+  }
+  .app > * { position: relative; z-index: 1; }
+
+  /* ---------------- HEADER ---------------- */
+  .hdr {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    padding: 18px 30px 16px;
+    border-bottom: 1px solid var(--line);
+    background: linear-gradient(180deg, var(--bg-2), var(--bg));
+    gap: 24px;
+  }
+  .hdr-left { min-width: 0; }
+  .hdr-title {
+    font-size: 25px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink);
+    line-height: 1.05;
+  }
+  .hdr-sub {
+    margin-top: 7px;
+    font-size: 10.5px;
+    letter-spacing: 0.32em;
+    color: var(--ink-faint);
+    font-weight: 500;
+  }
+
+  .hdr-date { display: flex; align-items: center; justify-content: center; gap: 22px; }
+  .date-wrap { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .datebox {
+    appearance: none; background: transparent; font: inherit; color: inherit; cursor: pointer;
+    display: grid;
+    grid-template-columns: auto auto;
+    grid-template-areas: "day my" "day weekday";
+    column-gap: 16px;
+    align-items: center;
+    padding: 2px 26px;
+    border-left: 1px solid var(--line);
+    border-right: 1px solid var(--line);
+    transition: border-color .16s;
+  }
+  .datebox:hover { border-color: var(--accent); }
+  .date-jump {
+    appearance: none; background: transparent; border: none; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px;
+    color: var(--ink-faint); font-family: var(--font-ui);
+    font-size: 8.5px; letter-spacing: 0.26em; font-weight: 600;
+    padding: 2px 4px; transition: color .16s;
+  }
+  .date-jump:hover { color: var(--ink); }
+  .date-jump svg { color: var(--accent); }
+
+  /* calendar popover */
+  .cal-backdrop { position: fixed; inset: 0; z-index: 40; background: transparent; }
+  .cal {
+    position: absolute; top: calc(100% + 12px); left: 50%; transform: translateX(-50%);
+    z-index: 41; width: 286px;
+    background: var(--bg-2); border: 1px solid var(--line);
+    box-shadow: 0 24px 60px -16px oklch(0.08 0.02 252 / 0.85), 0 0 0 1px oklch(0.1 0.02 252 / 0.6);
+    padding: 14px 14px 10px;
+  }
+  .cal::before {
+    content: ""; position: absolute; top: -7px; left: 50%; transform: translateX(-50%) rotate(45deg);
+    width: 12px; height: 12px; background: var(--bg-2); border-left: 1px solid var(--line); border-top: 1px solid var(--line);
+  }
+  .cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .cal-list-label { font-size: 9px; letter-spacing: 0.28em; font-weight: 700; color: var(--accent); text-transform: uppercase; margin-bottom: 9px; }
+  .cal-list { display: flex; flex-direction: column; gap: 1px; max-height: 218px; overflow-y: auto; margin: 0 -4px; padding: 0 4px; }
+  .cal-list::-webkit-scrollbar { width: 8px; }
+  .cal-list::-webkit-scrollbar-thumb { background: var(--line); border: 2px solid transparent; background-clip: padding-box; border-radius: 8px; }
+  .cal-li {
+    appearance: none; background: transparent; border: none; cursor: pointer; text-align: left;
+    display: flex; align-items: baseline; gap: 12px; padding: 8px 10px;
+    border-left: 2px solid transparent; transition: background .12s, border-color .12s;
+  }
+  .cal-li:hover { background: oklch(0.3 0.02 252 / 0.55); border-left-color: var(--ink-faint); }
+  .cal-li.is-cur { background: color-mix(in oklch, var(--accent) 16%, transparent); border-left-color: var(--accent); }
+  .cal-li-date { font-family: var(--font-ui); font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: var(--ink); white-space: nowrap; font-variant-numeric: tabular-nums; min-width: 62px; }
+  .cal-li-date em { font-style: normal; color: var(--ink-faint); font-weight: 500; }
+  .cal-li-event { font-family: var(--font-serif); font-size: 13px; color: var(--ink-dim); line-height: 1.25; }
+  .cal-li.is-cur .cal-li-event { color: var(--ink); }
+  .cal-or {
+    display: flex; align-items: center; gap: 10px; margin: 14px 0 12px;
+    font-size: 8.5px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-faint);
+  }
+  .cal-or::before, .cal-or::after { content: ""; flex: 1; height: 1px; background: var(--line-soft); }
+  .cal-nav {
+    appearance: none; background: transparent; border: 1px solid var(--line); color: var(--ink-dim);
+    width: 26px; height: 26px; cursor: pointer; font-size: 16px; line-height: 1; display: grid; place-items: center;
+    transition: border-color .14s, color .14s;
+  }
+  .cal-nav:hover:not(:disabled) { color: var(--ink); border-color: var(--accent); }
+  .cal-nav:disabled { opacity: 0.25; cursor: default; }
+  .cal-title { font-size: 12px; font-weight: 600; letter-spacing: 0.18em; color: var(--ink); text-transform: uppercase; }
+  .cal-title span { color: var(--ink-faint); margin-left: 4px; }
+  .cal-dow { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 4px; }
+  .cal-dow span { text-align: center; font-size: 9px; letter-spacing: 0.1em; color: var(--ink-faint); font-weight: 600; padding: 4px 0; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+  .cal-cell {
+    appearance: none; background: transparent; border: none; cursor: pointer;
+    position: relative; aspect-ratio: 1; display: grid; place-items: center;
+    font-family: var(--font-ui); font-size: 12px; color: var(--ink-dim);
+    font-variant-numeric: tabular-nums; border-radius: 2px; transition: background .12s, color .12s;
+  }
+  .cal-cell:hover:not(:disabled) { background: oklch(0.3 0.02 252 / 0.6); color: var(--ink); }
+  .cal-cell:disabled { color: var(--ink-faint); opacity: 0.25; cursor: default; }
+  .cal-empty { cursor: default; }
+  .cal-cell.has-entry { color: var(--ink); font-weight: 600; }
+  .cal-cell.is-cur { background: var(--accent); color: #fff; font-weight: 700; }
+  .cal-mark { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; border-radius: 50%; background: var(--accent); }
+  .cal-cell.is-cur .cal-mark { background: #fff; }
+  .cal-mark-static { position: static; transform: none; display: inline-block; margin-right: 5px; }
+  .cal-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 9px; border-top: 1px solid var(--line-soft); }
+  .cal-key, .cal-hint { font-size: 8.5px; letter-spacing: 0.12em; color: var(--ink-faint); display: inline-flex; align-items: center; text-transform: uppercase; }
+  .date-day {
+    grid-area: day;
+    font-family: var(--font-ui);
+    font-size: 62px;
+    font-weight: 300;
+    line-height: 0.9;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .date-my { grid-area: my; display: flex; flex-direction: column; align-self: end; padding-bottom: 2px; }
+  .date-month { font-size: 17px; font-weight: 600; letter-spacing: 0.22em; color: var(--ink); }
+  .date-year { font-size: 12px; font-weight: 500; letter-spacing: 0.3em; color: var(--ink-dim); margin-top: 3px; }
+  .date-weekday { grid-area: weekday; align-self: start; font-size: 10px; letter-spacing: 0.42em; color: var(--accent); font-weight: 600; margin-top: 4px; }
+
+  .navarrow {
+    appearance: none; background: transparent; border: 1px solid var(--line);
+    color: var(--ink-dim); width: 42px; height: 42px; cursor: pointer;
+    display: grid; place-items: center;
+    transition: border-color .16s, color .16s, background .16s;
+  }
+  .navarrow:hover:not(:disabled) { color: var(--ink); border-color: var(--accent); background: color-mix(in oklch, var(--accent) 14%, transparent); }
+  .navarrow:active:not(:disabled) { transform: translateY(1px); }
+  .navarrow:disabled { opacity: 0.28; cursor: default; }
+
+  .hdr-right { display: flex; justify-content: flex-end; }
+  .stamp {
+    --stamp: var(--accent);
+    border: 2px solid color-mix(in oklch, var(--stamp) 70%, var(--ink-faint));
+    color: color-mix(in oklch, var(--stamp) 80%, var(--ink));
+    padding: 7px 14px 6px;
+    transform: rotate(-4deg);
+    text-align: center;
+    opacity: 0.82;
+    border-radius: 2px;
+  }
+  .stamp span { display: block; font-size: 13px; font-weight: 700; letter-spacing: 0.2em; }
+  .stamp em { display: block; font-style: normal; font-size: 8px; letter-spacing: 0.26em; margin-top: 2px; opacity: 0.8; }
+
+  /* ---------------- MAIN ---------------- */
+  .main {
+    display: grid;
+    grid-template-columns: 1fr 1px 1fr;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .seam { background: var(--line); }
+
+  .panel { display: flex; flex-direction: column; min-height: 0; min-width: 0; position: relative; overflow: hidden; }
+  .panel-actual { background: linear-gradient(160deg, var(--paper), var(--paper-2)); }
+  .panel-note { background: var(--panel); }
+
+  .panel-label {
+    padding: 16px 34px 14px;
+    border-bottom: 1px solid var(--line-soft);
+    flex: none;
+  }
+  .panel-label-row { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; }
+  .panel-kicker { font-size: 12px; font-weight: 700; letter-spacing: 0.3em; color: var(--ink); }
+  .panel-note .panel-kicker { color: var(--ink); }
+  .panel-meta { font-size: 9.5px; letter-spacing: 0.24em; color: var(--ink-faint); font-weight: 500; white-space: nowrap; }
+  .panel-title { margin-top: 7px; font-size: 12px; letter-spacing: 0.2em; color: var(--ink-dim); font-weight: 500; }
+
+  .panel-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 30px 34px 44px; }
+  .panel-scroll::-webkit-scrollbar { width: 10px; }
+  .panel-scroll::-webkit-scrollbar-track { background: transparent; }
+  .panel-scroll::-webkit-scrollbar-thumb { background: var(--line); border: 3px solid transparent; background-clip: padding-box; border-radius: 10px; }
+  .panel-scroll::-webkit-scrollbar-thumb:hover { background: var(--ink-faint); background-clip: padding-box; }
+
+  /* typed (left) */
+  .typed { font-family: var(--font-type); color: var(--ink); max-width: 60ch; }
+  .typed-head {
+    display: flex; flex-direction: column; gap: 4px;
+    font-size: 11px; letter-spacing: 0.06em; color: var(--ink-dim);
+    padding-bottom: 18px; margin-bottom: 22px; border-bottom: 1px dashed var(--line);
+  }
+  .typed-p {
+    position: relative;
+    font-size: 16px;
+    line-height: 2.0;
+    margin: 0 0 22px;
+    padding-left: 38px;
+    letter-spacing: 0.01em;
+    text-wrap: pretty;
+  }
+  .typed-p .lineno {
+    position: absolute; left: 0; top: 1px;
+    font-size: 11px; color: var(--ink-faint); letter-spacing: 0;
+    user-select: none;
+  }
+  .typed.upper .typed-p { text-transform: uppercase; }
+  .typed-foot { margin-top: 30px; font-size: 11px; letter-spacing: 0.3em; color: var(--ink-faint); }
+
+  /* note (right) */
+  .note-body { max-width: 58ch; }
+  .panel-note[data-font="serif"] .note-body { font-family: var(--font-serif); }
+  .panel-note[data-font="sans"]  .note-body { font-family: var(--font-ui); }
+  .note-part { margin-bottom: 26px; }
+  .note-part-label {
+    font-family: var(--font-ui); font-size: 9.5px; letter-spacing: 0.28em; font-weight: 700;
+    color: var(--accent); margin-bottom: 11px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .note-part-label::after { content: ""; flex: 1; height: 1px; background: var(--line-soft); }
+  .note-body p { font-size: 17.5px; line-height: 1.72; color: var(--ink-dim); margin: 0; text-wrap: pretty; }
+  .panel-note[data-font="sans"] .note-body p { font-size: 15.5px; line-height: 1.75; }
+  .note-lead { color: var(--ink) !important; }
+  .panel-note[data-font="serif"] .note-lead::first-letter {
+    font-size: 3.1em; float: left; line-height: 0.74; padding: 6px 12px 0 0;
+    color: var(--accent); font-weight: 600;
+  }
+
+  /* note status chips + regenerate */
+  .note-status { display: flex; align-items: center; gap: 10px; }
+  .note-chip { font-size: 9px; letter-spacing: 0.2em; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; }
+  .note-chip.live { color: var(--ink-dim); }
+  .note-chip.live .led { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent) 26%, transparent); animation: led 2.4s ease-in-out infinite; }
+  @keyframes led { 0%,100%{opacity:.55;} 50%{opacity:1;} }
+  .note-chip.archive { color: var(--ink-faint); }
+  .note-chip.off { color: color-mix(in oklch, var(--accent) 60%, var(--ink-dim)); }
+  .note-chip.loading { color: var(--ink-dim); }
+  .note-chip .cursor { color: var(--accent); animation: blink 1s steps(1) infinite; margin-left: 2px; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .note-regen {
+    appearance: none; background: transparent; border: 1px solid var(--line); color: var(--ink-faint);
+    width: 24px; height: 24px; display: grid; place-items: center; cursor: pointer; transition: color .14s, border-color .14s, transform .3s;
+  }
+  .note-regen:hover { color: var(--ink); border-color: var(--accent); }
+  .note-regen:active { transform: rotate(-180deg); }
+
+  /* loading skeleton */
+  .sk { height: 12px; border-radius: 2px; margin-bottom: 11px;
+    background: linear-gradient(90deg, var(--line-soft) 0%, oklch(0.32 0.015 252) 40%, var(--line-soft) 80%);
+    background-size: 200% 100%; animation: shimmer 1.4s ease-in-out infinite; }
+  .sk-1 { width: 96%; } .sk-2 { width: 99%; } .sk-3 { width: 64%; margin-bottom: 0; }
+  @keyframes shimmer { 0% { background-position: 150% 0; } 100% { background-position: -50% 0; } }
+  .note-sig { margin-top: 30px; display: flex; align-items: center; gap: 14px; font-family: var(--font-ui); }
+  .note-sig-rule { height: 1px; width: 40px; background: var(--accent); flex: none; }
+  .note-sig span:last-child { font-size: 9.5px; letter-spacing: 0.26em; color: var(--ink-faint); font-weight: 600; }
+
+  /* citation strip under CINCPAC Actual */
+  .panel-actual .panel-label, .panel-actual .panel-scroll { position: relative; z-index: 2; }
+  .panel-cite {
+    position: relative; z-index: 3; flex: none;
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 34px; border-top: 1px solid var(--line-soft);
+    background: oklch(0.165 0.013 70 / 0.55);
+  }
+  .cite-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex: none; }
+  .cite-main { font-family: var(--font-ui); font-size: 10px; letter-spacing: 0.18em; font-weight: 600; color: var(--ink-dim); }
+  .cite-src { font-family: var(--font-ui); font-size: 9px; letter-spacing: 0.14em; color: var(--ink-faint); margin-left: auto; font-style: italic; }
+
+  /* paper grain on left panel */
+  .panel-grain {
+    position: absolute; inset: 0; pointer-events: none; z-index: 1;
+    opacity: calc(var(--grain, 0.5) * 0.9);
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 160px 160px;
+  }
+  .panel-actual::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 1;
+    box-shadow: inset 0 0 120px 30px oklch(0.12 0.02 70 / 0.45);
+  }
+
+  /* ---------------- TIMELINE ---------------- */
+  .timeline {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 28px;
+    padding: 16px 34px 18px;
+    border-top: 1px solid var(--line);
+    background: linear-gradient(0deg, var(--bg-2), var(--bg));
+  }
+  .tl-cap { display: flex; flex-direction: column; gap: 3px; }
+  .tl-cap-r { align-items: flex-end; }
+  .tl-cap-d { font-size: 11px; letter-spacing: 0.16em; color: var(--ink-dim); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .tl-cap-t { font-size: 8.5px; letter-spacing: 0.28em; color: var(--ink-faint); font-weight: 500; }
+
+  .tl-track-wrap { padding: 18px 8px 4px; }
+  .tl-track { position: relative; height: 2px; background: var(--line); }
+  .tl-track::before {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0;
+    width: var(--prog, 0); background: var(--ink-faint);
+  }
+
+  .tl-tick { position: absolute; top: 0; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; }
+  .tl-tick-line { width: 1px; height: 6px; background: var(--line); margin-top: -2px; }
+  .tl-tick-label { font-size: 7.5px; letter-spacing: 0.14em; color: var(--ink-faint); margin-top: 5px; }
+
+  .tl-dot {
+    appearance: none; border: none; cursor: pointer;
+    position: absolute; top: 1px; transform: translate(-50%, -50%);
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--bg); border: 1.5px solid var(--ink-faint);
+    transition: transform .14s, border-color .14s, background .14s;
+    padding: 0;
+  }
+  .tl-dot:hover { border-color: var(--ink); background: var(--ink-dim); transform: translate(-50%, -50%) scale(1.35); }
+
+  .tl-marker { position: absolute; top: 1px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; z-index: 3; }
+  .tl-marker-flag {
+    position: absolute; bottom: 12px; white-space: nowrap;
+    font-size: 9px; letter-spacing: 0.12em; font-weight: 700; color: var(--bg);
+    background: var(--accent); padding: 3px 7px; border-radius: 2px;
+    font-variant-numeric: tabular-nums;
+  }
+  .tl-marker-flag::after {
+    content: ""; position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%);
+    border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 4px solid var(--accent);
+  }
+  .tl-marker-stem { width: 2px; height: 14px; background: var(--accent); transform: translateY(-7px); }
+  .tl-marker-head {
+    width: 11px; height: 11px; border-radius: 50%; background: var(--accent);
+    transform: translateY(-13px);
+    box-shadow: 0 0 0 4px color-mix(in oklch, var(--accent) 28%, transparent);
+  }
+
+  @media (max-width: 920px) {
+    .hdr-title { font-size: 19px; }
+    .date-day { font-size: 46px; }
+    .panel-scroll { padding: 22px; }
+  }
+
+  .hdr { z-index: 2; }
+  .hdr-sub { font-size: 9px; letter-spacing: 0.18em; white-space: nowrap; }
+  .typed-p { word-wrap: break-word; overflow-wrap: break-word; }
+  .typed-p-degraded { opacity: 0.45; }
+  .ocr-marker {
+    font-size: 9.5px; letter-spacing: 0.14em; font-weight: 500;
+    color: var(--ink-faint); margin-left: 8px;
+    font-family: var(--font-ui); font-style: italic;
+    vertical-align: middle;
+  }
+  .cal-nav-group { display: flex; gap: 2px; }
+</style>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script src="entries.js"></script>
+  <script type="text/babel">
+
+/* BEGIN USAGE */
+// tweaks-panel.jsx
+// Reusable Tweaks shell + form-control helpers.
+// Exports (to window): useTweaks, TweaksPanel, TweakSection, TweakRow, TweakSlider,
+//   TweakToggle, TweakRadio, TweakSelect, TweakText, TweakNumber, TweakColor, TweakButton.
+//
+// Owns the host protocol (listens for __activate_edit_mode / __deactivate_edit_mode,
+// posts __edit_mode_available / __edit_mode_set_keys / __edit_mode_dismissed) so
+// individual prototypes don't re-roll it. Ships a consistent set of controls so you
+// don't hand-draw <input type="range">, segmented radios, steppers, etc.
+//
+// Usage (in an HTML file that loads React + Babel):
+//
+//   const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+//     "primaryColor": "#D97757",
+//     "palette": ["#D97757", "#29261b", "#f6f4ef"],
+//     "fontSize": 16,
+//     "density": "regular",
+//     "dark": false
+//   }/*EDITMODE-END*/;
+//
+//   function App() {
+//     const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+//     return (
+//       <div style={{ fontSize: t.fontSize, color: t.primaryColor }}>
+//         Hello
+//         <TweaksPanel>
+//           <TweakSection label="Typography" />
+//           <TweakSlider label="Font size" value={t.fontSize} min={10} max={32} unit="px"
+//                        onChange={(v) => setTweak('fontSize', v)} />
+//           <TweakRadio  label="Density" value={t.density}
+//                        options={['compact', 'regular', 'comfy']}
+//                        onChange={(v) => setTweak('density', v)} />
+//           <TweakSection label="Theme" />
+//           <TweakColor  label="Primary" value={t.primaryColor}
+//                        options={['#D97757', '#2A6FDB', '#1F8A5B', '#7A5AE0']}
+//                        onChange={(v) => setTweak('primaryColor', v)} />
+//           <TweakColor  label="Palette" value={t.palette}
+//                        options={[['#D97757', '#29261b', '#f6f4ef'],
+//                                  ['#475569', '#0f172a', '#f1f5f9']]}
+//                        onChange={(v) => setTweak('palette', v)} />
+//           <TweakToggle label="Dark mode" value={t.dark}
+//                        onChange={(v) => setTweak('dark', v)} />
+//         </TweaksPanel>
+//       </div>
+//     );
+//   }
+//
+// TweakRadio is the segmented control for 2–3 short options (auto-falls-back to
+// TweakSelect past ~16/~10 chars per label); reach for TweakSelect directly when
+// options are many or long. For color tweaks always curate 3-4 options rather than
+// a free picker; an option can also be a whole 2–5 color palette (the stored value
+// is the array). The Tweak* controls are a floor, not a ceiling — build custom
+// controls inside the panel if a tweak calls for UI they don't cover.
+/* END USAGE */
+// ─────────────────────────────────────────────────────────────────────────────
+
+const __TWEAKS_STYLE = `
+  .twk-panel{position:fixed;right:16px;bottom:16px;z-index:2147483646;width:280px;
+    max-height:calc(100vh - 32px);display:flex;flex-direction:column;
+    transform:scale(var(--dc-inv-zoom,1));transform-origin:bottom right;
+    background:rgba(250,249,247,.78);color:#29261b;
+    -webkit-backdrop-filter:blur(24px) saturate(160%);backdrop-filter:blur(24px) saturate(160%);
+    border:.5px solid rgba(255,255,255,.6);border-radius:14px;
+    box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 12px 40px rgba(0,0,0,.18);
+    font:11.5px/1.4 ui-sans-serif,system-ui,-apple-system,sans-serif;overflow:hidden}
+  .twk-hd{display:flex;align-items:center;justify-content:space-between;
+    padding:10px 8px 10px 14px;cursor:move;user-select:none}
+  .twk-hd b{font-size:12px;font-weight:600;letter-spacing:.01em}
+  .twk-x{appearance:none;border:0;background:transparent;color:rgba(41,38,27,.55);
+    width:22px;height:22px;border-radius:6px;cursor:default;font-size:13px;line-height:1}
+  .twk-x:hover{background:rgba(0,0,0,.06);color:#29261b}
+  .twk-body{padding:2px 14px 14px;display:flex;flex-direction:column;gap:10px;
+    overflow-y:auto;overflow-x:hidden;min-height:0;
+    scrollbar-width:thin;scrollbar-color:rgba(0,0,0,.15) transparent}
+  .twk-body::-webkit-scrollbar{width:8px}
+  .twk-body::-webkit-scrollbar-track{background:transparent;margin:2px}
+  .twk-body::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:4px;
+    border:2px solid transparent;background-clip:content-box}
+  .twk-body::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.25);
+    border:2px solid transparent;background-clip:content-box}
+  .twk-row{display:flex;flex-direction:column;gap:5px}
+  .twk-row-h{flex-direction:row;align-items:center;justify-content:space-between;gap:10px}
+  .twk-lbl{display:flex;justify-content:space-between;align-items:baseline;
+    color:rgba(41,38,27,.72)}
+  .twk-lbl>span:first-child{font-weight:500}
+  .twk-val{color:rgba(41,38,27,.5);font-variant-numeric:tabular-nums}
+
+  .twk-sect{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+    color:rgba(41,38,27,.45);padding:10px 0 0}
+  .twk-sect:first-child{padding-top:0}
+
+  .twk-field{appearance:none;box-sizing:border-box;width:100%;min-width:0;height:26px;padding:0 8px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:7px;
+    background:rgba(255,255,255,.6);color:inherit;font:inherit;outline:none}
+  .twk-field:focus{border-color:rgba(0,0,0,.25);background:rgba(255,255,255,.85)}
+  select.twk-field{padding-right:22px;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='rgba(0,0,0,.5)' d='M0 0h10L5 6z'/></svg>");
+    background-repeat:no-repeat;background-position:right 8px center}
+
+  .twk-slider{appearance:none;-webkit-appearance:none;width:100%;height:4px;margin:6px 0;
+    border-radius:999px;background:rgba(0,0,0,.12);outline:none}
+  .twk-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+    width:14px;height:14px;border-radius:50%;background:#fff;
+    border:.5px solid rgba(0,0,0,.12);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:default}
+  .twk-slider::-moz-range-thumb{width:14px;height:14px;border-radius:50%;
+    background:#fff;border:.5px solid rgba(0,0,0,.12);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:default}
+
+  .twk-seg{position:relative;display:flex;padding:2px;border-radius:8px;
+    background:rgba(0,0,0,.06);user-select:none}
+  .twk-seg-thumb{position:absolute;top:2px;bottom:2px;border-radius:6px;
+    background:rgba(255,255,255,.9);box-shadow:0 1px 2px rgba(0,0,0,.12);
+    transition:left .15s cubic-bezier(.3,.7,.4,1),width .15s}
+  .twk-seg.dragging .twk-seg-thumb{transition:none}
+  .twk-seg button{appearance:none;position:relative;z-index:1;flex:1;border:0;
+    background:transparent;color:inherit;font:inherit;font-weight:500;min-height:22px;
+    border-radius:6px;cursor:default;padding:4px 6px;line-height:1.2;
+    overflow-wrap:anywhere}
+
+  .twk-toggle{position:relative;width:32px;height:18px;border:0;border-radius:999px;
+    background:rgba(0,0,0,.15);transition:background .15s;cursor:default;padding:0}
+  .twk-toggle[data-on="1"]{background:#34c759}
+  .twk-toggle i{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;
+    background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s}
+  .twk-toggle[data-on="1"] i{transform:translateX(14px)}
+
+  .twk-num{display:flex;align-items:center;box-sizing:border-box;min-width:0;height:26px;padding:0 0 0 8px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:7px;background:rgba(255,255,255,.6)}
+  .twk-num-lbl{font-weight:500;color:rgba(41,38,27,.6);cursor:ew-resize;
+    user-select:none;padding-right:8px}
+  .twk-num input{flex:1;min-width:0;height:100%;border:0;background:transparent;
+    font:inherit;font-variant-numeric:tabular-nums;text-align:right;padding:0 8px 0 0;
+    outline:none;color:inherit;-moz-appearance:textfield}
+  .twk-num input::-webkit-inner-spin-button,.twk-num input::-webkit-outer-spin-button{
+    -webkit-appearance:none;margin:0}
+  .twk-num-unit{padding-right:8px;color:rgba(41,38,27,.45)}
+
+  .twk-btn{appearance:none;height:26px;padding:0 12px;border:0;border-radius:7px;
+    background:rgba(0,0,0,.78);color:#fff;font:inherit;font-weight:500;cursor:default}
+  .twk-btn:hover{background:rgba(0,0,0,.88)}
+  .twk-btn.secondary{background:rgba(0,0,0,.06);color:inherit}
+  .twk-btn.secondary:hover{background:rgba(0,0,0,.1)}
+
+  .twk-swatch{appearance:none;-webkit-appearance:none;width:56px;height:22px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:6px;padding:0;cursor:default;
+    background:transparent;flex-shrink:0}
+  .twk-swatch::-webkit-color-swatch-wrapper{padding:0}
+  .twk-swatch::-webkit-color-swatch{border:0;border-radius:5.5px}
+  .twk-swatch::-moz-color-swatch{border:0;border-radius:5.5px}
+
+  .twk-chips{display:flex;gap:6px}
+  .twk-chip{position:relative;appearance:none;flex:1;min-width:0;height:46px;
+    padding:0;border:0;border-radius:6px;overflow:hidden;cursor:default;
+    box-shadow:0 0 0 .5px rgba(0,0,0,.12),0 1px 2px rgba(0,0,0,.06);
+    transition:transform .12s cubic-bezier(.3,.7,.4,1),box-shadow .12s}
+  .twk-chip:hover{transform:translateY(-1px);
+    box-shadow:0 0 0 .5px rgba(0,0,0,.18),0 4px 10px rgba(0,0,0,.12)}
+  .twk-chip[data-on="1"]{box-shadow:0 0 0 1.5px rgba(0,0,0,.85),
+    0 2px 6px rgba(0,0,0,.15)}
+  .twk-chip>span{position:absolute;top:0;bottom:0;right:0;width:34%;
+    display:flex;flex-direction:column;box-shadow:-1px 0 0 rgba(0,0,0,.1)}
+  .twk-chip>span>i{flex:1;box-shadow:0 -1px 0 rgba(0,0,0,.1)}
+  .twk-chip>span>i:first-child{box-shadow:none}
+  .twk-chip svg{position:absolute;top:6px;left:6px;width:13px;height:13px;
+    filter:drop-shadow(0 1px 1px rgba(0,0,0,.3))}
+`;
+
+// ── useTweaks ───────────────────────────────────────────────────────────────
+// Single source of truth for tweak values. setTweak persists via the host
+// (__edit_mode_set_keys → host rewrites the EDITMODE block on disk).
+function useTweaks(defaults) {
+  const [values, setValues] = React.useState(defaults);
+  // Accepts either setTweak('key', value) or setTweak({ key: value, ... }) so a
+  // useState-style call doesn't write a "[object Object]" key into the persisted
+  // JSON block.
+  const setTweak = React.useCallback((keyOrEdits, val) => {
+    const edits = typeof keyOrEdits === 'object' && keyOrEdits !== null
+      ? keyOrEdits : { [keyOrEdits]: val };
+    setValues((prev) => ({ ...prev, ...edits }));
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits }, '*');
+    // Same-window signal so in-page listeners (deck-stage rail thumbnails)
+    // can react — the parent message only reaches the host, not peers.
+    window.dispatchEvent(new CustomEvent('tweakchange', { detail: edits }));
+  }, []);
+  return [values, setTweak];
+}
+
+// ── TweaksPanel ─────────────────────────────────────────────────────────────
+// Floating shell. Registers the protocol listener BEFORE announcing
+// availability — if the announce ran first, the host's activate could land
+// before our handler exists and the toolbar toggle would silently no-op.
+// The close button posts __edit_mode_dismissed so the host's toolbar toggle
+// flips off in lockstep; the host echoes __deactivate_edit_mode back which
+// is what actually hides the panel.
+function TweaksPanel({ title = 'Tweaks', children }) {
+  const [open, setOpen] = React.useState(false);
+  const dragRef = React.useRef(null);
+  const offsetRef = React.useRef({ x: 16, y: 16 });
+  const PAD = 16;
+
+  const clampToViewport = React.useCallback(() => {
+    const panel = dragRef.current;
+    if (!panel) return;
+    const w = panel.offsetWidth, h = panel.offsetHeight;
+    const maxRight = Math.max(PAD, window.innerWidth - w - PAD);
+    const maxBottom = Math.max(PAD, window.innerHeight - h - PAD);
+    offsetRef.current = {
+      x: Math.min(maxRight, Math.max(PAD, offsetRef.current.x)),
+      y: Math.min(maxBottom, Math.max(PAD, offsetRef.current.y)),
+    };
+    panel.style.right = offsetRef.current.x + 'px';
+    panel.style.bottom = offsetRef.current.y + 'px';
+  }, []);
+
+  React.useEffect(() => {
+    if (!open) return;
+    clampToViewport();
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', clampToViewport);
+      return () => window.removeEventListener('resize', clampToViewport);
+    }
+    const ro = new ResizeObserver(clampToViewport);
+    ro.observe(document.documentElement);
+    return () => ro.disconnect();
+  }, [open, clampToViewport]);
+
+  React.useEffect(() => {
+    const onMsg = (e) => {
+      const t = e?.data?.type;
+      if (t === '__activate_edit_mode') setOpen(true);
+      else if (t === '__deactivate_edit_mode') setOpen(false);
+    };
+    window.addEventListener('message', onMsg);
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', onMsg);
+  }, []);
+
+  const dismiss = () => {
+    setOpen(false);
+    window.parent.postMessage({ type: '__edit_mode_dismissed' }, '*');
+  };
+
+  const onDragStart = (e) => {
+    const panel = dragRef.current;
+    if (!panel) return;
+    const r = panel.getBoundingClientRect();
+    const sx = e.clientX, sy = e.clientY;
+    const startRight = window.innerWidth - r.right;
+    const startBottom = window.innerHeight - r.bottom;
+    const move = (ev) => {
+      offsetRef.current = {
+        x: startRight - (ev.clientX - sx),
+        y: startBottom - (ev.clientY - sy),
+      };
+      clampToViewport();
+    };
+    const up = () => {
+      window.removeEventListener('mousemove', move);
+      window.removeEventListener('mouseup', up);
+    };
+    window.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', up);
+  };
+
+  if (!open) return null;
+  return (
+    <>
+      <style>{__TWEAKS_STYLE}</style>
+      <div ref={dragRef} className="twk-panel" data-omelette-chrome=""
+           style={{ right: offsetRef.current.x, bottom: offsetRef.current.y }}>
+        <div className="twk-hd" onMouseDown={onDragStart}>
+          <b>{title}</b>
+          <button className="twk-x" aria-label="Close tweaks"
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={dismiss}>✕</button>
+        </div>
+        <div className="twk-body">
+          {children}
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ── Layout helpers ──────────────────────────────────────────────────────────
+
+function TweakSection({ label, children }) {
+  return (
+    <>
+      <div className="twk-sect">{label}</div>
+      {children}
+    </>
+  );
+}
+
+function TweakRow({ label, value, children, inline = false }) {
+  return (
+    <div className={inline ? 'twk-row twk-row-h' : 'twk-row'}>
+      <div className="twk-lbl">
+        <span>{label}</span>
+        {value != null && <span className="twk-val">{value}</span>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+// ── Controls ────────────────────────────────────────────────────────────────
+
+function TweakSlider({ label, value, min = 0, max = 100, step = 1, unit = '', onChange }) {
+  return (
+    <TweakRow label={label} value={`${value}${unit}`}>
+      <input type="range" className="twk-slider" min={min} max={max} step={step}
+             value={value} onChange={(e) => onChange(Number(e.target.value))} />
+    </TweakRow>
+  );
+}
+
+function TweakToggle({ label, value, onChange }) {
+  return (
+    <div className="twk-row twk-row-h">
+      <div className="twk-lbl"><span>{label}</span></div>
+      <button type="button" className="twk-toggle" data-on={value ? '1' : '0'}
+              role="switch" aria-checked={!!value}
+              onClick={() => onChange(!value)}><i /></button>
+    </div>
+  );
+}
+
+function TweakRadio({ label, value, options, onChange }) {
+  const trackRef = React.useRef(null);
+  const [dragging, setDragging] = React.useState(false);
+  // The active value is read by pointer-move handlers attached for the lifetime
+  // of a drag — ref it so a stale closure doesn't fire onChange for every move.
+  const valueRef = React.useRef(value);
+  valueRef.current = value;
+
+  // Segments wrap mid-word once per-segment width runs out. The track is
+  // ~248px (280 panel − 28 body pad − 4 seg pad), each button loses 12px
+  // to its own padding, and 11.5px system-ui averages ~6.3px/char — so 2
+  // options fit ~16 chars each, 3 fit ~10. Past that (or >3 options), fall
+  // back to a dropdown rather than wrap.
+  const labelLen = (o) => String(typeof o === 'object' ? o.label : o).length;
+  const maxLen = options.reduce((m, o) => Math.max(m, labelLen(o)), 0);
+  const fitsAsSegments = maxLen <= ({ 2: 16, 3: 10 }[options.length] ?? 0);
+  if (!fitsAsSegments) {
+    // <select> emits strings — map back to the original option value so the
+    // fallback stays type-preserving (numbers, booleans) like the segment path.
+    const resolve = (s) => {
+      const m = options.find((o) => String(typeof o === 'object' ? o.value : o) === s);
+      return m === undefined ? s : typeof m === 'object' ? m.value : m;
+    };
+    return <TweakSelect label={label} value={value} options={options}
+                        onChange={(s) => onChange(resolve(s))} />;
+  }
+  const opts = options.map((o) => (typeof o === 'object' ? o : { value: o, label: o }));
+  const idx = Math.max(0, opts.findIndex((o) => o.value === value));
+  const n = opts.length;
+
+  const segAt = (clientX) => {
+    const r = trackRef.current.getBoundingClientRect();
+    const inner = r.width - 4;
+    const i = Math.floor(((clientX - r.left - 2) / inner) * n);
+    return opts[Math.max(0, Math.min(n - 1, i))].value;
+  };
+
+  const onPointerDown = (e) => {
+    setDragging(true);
+    const v0 = segAt(e.clientX);
+    if (v0 !== valueRef.current) onChange(v0);
+    const move = (ev) => {
+      if (!trackRef.current) return;
+      const v = segAt(ev.clientX);
+      if (v !== valueRef.current) onChange(v);
+    };
+    const up = () => {
+      setDragging(false);
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+
+  return (
+    <TweakRow label={label}>
+      <div ref={trackRef} role="radiogroup" onPointerDown={onPointerDown}
+           className={dragging ? 'twk-seg dragging' : 'twk-seg'}>
+        <div className="twk-seg-thumb"
+             style={{ left: `calc(2px + ${idx} * (100% - 4px) / ${n})`,
+                      width: `calc((100% - 4px) / ${n})` }} />
+        {opts.map((o) => (
+          <button key={o.value} type="button" role="radio" aria-checked={o.value === value}>
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </TweakRow>
+  );
+}
+
+function TweakSelect({ label, value, options, onChange }) {
+  return (
+    <TweakRow label={label}>
+      <select className="twk-field" value={value} onChange={(e) => onChange(e.target.value)}>
+        {options.map((o) => {
+          const v = typeof o === 'object' ? o.value : o;
+          const l = typeof o === 'object' ? o.label : o;
+          return <option key={v} value={v}>{l}</option>;
+        })}
+      </select>
+    </TweakRow>
+  );
+}
+
+function TweakText({ label, value, placeholder, onChange }) {
+  return (
+    <TweakRow label={label}>
+      <input className="twk-field" type="text" value={value} placeholder={placeholder}
+             onChange={(e) => onChange(e.target.value)} />
+    </TweakRow>
+  );
+}
+
+function TweakNumber({ label, value, min, max, step = 1, unit = '', onChange }) {
+  const clamp = (n) => {
+    if (min != null && n < min) return min;
+    if (max != null && n > max) return max;
+    return n;
+  };
+  const startRef = React.useRef({ x: 0, val: 0 });
+  const onScrubStart = (e) => {
+    e.preventDefault();
+    startRef.current = { x: e.clientX, val: value };
+    const decimals = (String(step).split('.')[1] || '').length;
+    const move = (ev) => {
+      const dx = ev.clientX - startRef.current.x;
+      const raw = startRef.current.val + dx * step;
+      const snapped = Math.round(raw / step) * step;
+      onChange(clamp(Number(snapped.toFixed(decimals))));
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+  return (
+    <div className="twk-num">
+      <span className="twk-num-lbl" onPointerDown={onScrubStart}>{label}</span>
+      <input type="number" value={value} min={min} max={max} step={step}
+             onChange={(e) => onChange(clamp(Number(e.target.value)))} />
+      {unit && <span className="twk-num-unit">{unit}</span>}
+    </div>
+  );
+}
+
+// Relative-luminance contrast pick — checkmarks drawn over a swatch need to
+// read on both #111 and #fafafa without per-option configuration. Hex input
+// only (#rgb / #rrggbb); named or rgb()/hsl() colors fall through to "light".
+function __twkIsLight(hex) {
+  const h = String(hex).replace('#', '');
+  const x = h.length === 3 ? h.replace(/./g, (c) => c + c) : h.padEnd(6, '0');
+  const n = parseInt(x.slice(0, 6), 16);
+  if (Number.isNaN(n)) return true;
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  return r * 299 + g * 587 + b * 114 > 148000;
+}
+
+const __TwkCheck = ({ light }) => (
+  <svg viewBox="0 0 14 14" aria-hidden="true">
+    <path d="M3 7.2 5.8 10 11 4.2" fill="none" strokeWidth="2.2"
+          strokeLinecap="round" strokeLinejoin="round"
+          stroke={light ? 'rgba(0,0,0,.78)' : '#fff'} />
+  </svg>
+);
+
+// TweakColor — curated color/palette picker. Each option is either a single
+// hex string or an array of 1-5 hex strings; the card adapts — a lone color
+// renders solid, a palette renders colors[0] as the hero (left ~2/3) with the
+// rest stacked in a sharp column on the right. onChange emits the
+// option in the shape it was passed (string stays string, array stays array).
+// Without options it falls back to the native color input for back-compat.
+function TweakColor({ label, value, options, onChange }) {
+  if (!options || !options.length) {
+    return (
+      <div className="twk-row twk-row-h">
+        <div className="twk-lbl"><span>{label}</span></div>
+        <input type="color" className="twk-swatch" value={value}
+               onChange={(e) => onChange(e.target.value)} />
+      </div>
+    );
+  }
+  // Native <input type=color> emits lowercase hex per the HTML spec, so
+  // compare case-insensitively. String() guards JSON.stringify(undefined),
+  // which returns the primitive undefined (no .toLowerCase).
+  const key = (o) => String(JSON.stringify(o)).toLowerCase();
+  const cur = key(value);
+  return (
+    <TweakRow label={label}>
+      <div className="twk-chips" role="radiogroup">
+        {options.map((o, i) => {
+          const colors = Array.isArray(o) ? o : [o];
+          const [hero, ...rest] = colors;
+          const sup = rest.slice(0, 4);
+          const on = key(o) === cur;
+          return (
+            <button key={i} type="button" className="twk-chip" role="radio"
+                    aria-checked={on} data-on={on ? '1' : '0'}
+                    aria-label={colors.join(', ')} title={colors.join(' · ')}
+                    style={{ background: hero }}
+                    onClick={() => onChange(o)}>
+              {sup.length > 0 && (
+                <span>
+                  {sup.map((c, j) => <i key={j} style={{ background: c }} />)}
+                </span>
+              )}
+              {on && <__TwkCheck light={__twkIsLight(hero)} />}
+            </button>
+          );
+        })}
+      </div>
+    </TweakRow>
+  );
+}
+
+function TweakButton({ label, onClick, secondary = false }) {
+  return (
+    <button type="button" className={secondary ? 'twk-btn secondary' : 'twk-btn'}
+            onClick={onClick}>{label}</button>
+  );
+}
+
+Object.assign(window, {
+  useTweaks, TweaksPanel, TweakSection, TweakRow,
+  TweakSlider, TweakToggle, TweakRadio, TweakSelect,
+  TweakText, TweakNumber, TweakColor, TweakButton,
+});
+
+  </script>
+  <script type="text/babel">
+// This Day in the Pacific War — app
+/* global React, ReactDOM, useTweaks, TweaksPanel, TweakSection, TweakRadio, TweakSlider, TweakToggle, TweakColor */
+const { useState, useMemo, useEffect, useCallback } = React;
+
+// ---------- date helpers ----------
+const MONTHS = ["JANUARY","FEBRUARY","MARCH","APRIL","MAY","JUNE","JULY","AUGUST","SEPTEMBER","OCTOBER","NOVEMBER","DECEMBER"];
+const WEEKDAYS = ["SUNDAY","MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY"];
+const DOW = ["S","M","T","W","T","F","S"];
+function parseDate(s) { const [y,m,d] = s.split("-").map(Number); return new Date(Date.UTC(y, m-1, d)); }
+function iso(y,m,d){ return `${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`; }
+function fmtDay(s) { return String(parseDate(s).getUTCDate()).padStart(2,"0"); }
+function fmtMonth(s) { return MONTHS[parseDate(s).getUTCMonth()]; }
+function fmtYear(s) { return parseDate(s).getUTCFullYear(); }
+function fmtWeekday(s) { return WEEKDAYS[parseDate(s).getUTCDay()]; }
+function titleCase(s){ return s.charAt(0) + s.slice(1).toLowerCase(); }
+function dayFrac(s, start, end) {
+  const t = parseDate(s).getTime(), a = parseDate(start).getTime(), b = parseDate(end).getTime();
+  return Math.max(0, Math.min(1, (t - a) / (b - a)));
+}
+
+// ---------- note ----------
+const NOTE_PARTS = [
+  { key: "knew",      label: "WHAT HE KNEW" },
+  { key: "didntKnow", label: "WHAT HE DIDN'T YET KNOW" },
+  { key: "coming",    label: "WHAT WAS COMING" },
+];
+
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "noteFont": "serif",
+  "grain": 0.5,
+  "accent": "#c0392f",
+  "showMarkers": true,
+  "uppercaseActual": false
+}/*EDITMODE-END*/;
+
+// ---------- small components ----------
+function Stamp({ accent }) {
+  return (
+    <div className="stamp" style={{ "--stamp": accent }}>
+      <span>DECLASSIFIED</span>
+      <em>E.O. 13526</em>
+    </div>
+  );
+}
+
+function NavArrow({ dir, disabled, onClick }) {
+  return (
+    <button className="navarrow" data-dir={dir} disabled={disabled} onClick={onClick}
+            aria-label={dir === "prev" ? "Previous entry" : "Next entry"}>
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+        {dir === "prev"
+          ? <path d="M15 5 L8 12 L15 19" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="square"/>
+          : <path d="M9 5 L16 12 L9 19" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="square"/>}
+      </svg>
+    </button>
+  );
+}
+
+// ---------- calendar popover ----------
+function Calendar({ entries, currentDate, onPick, onClose }) {
+  const { start, end } = window.WAR_TIMELINE;
+  const startD = parseDate(start), endD = parseDate(end);
+  const cur = parseDate(currentDate);
+  const [view, setView] = useState({ y: cur.getUTCFullYear(), m: cur.getUTCMonth() });
+  const entryDates = useMemo(() => new Set(entries.map(e => e.date)), [entries]);
+
+  const minYM = startD.getUTCFullYear()*12 + startD.getUTCMonth();
+  const maxYM = endD.getUTCFullYear()*12 + endD.getUTCMonth();
+  const curYM = view.y*12 + view.m;
+  const step = (delta) => {
+    const v = curYM + delta;
+    if (v >= minYM && v <= maxYM) setView({ y: Math.floor(v/12), m: ((v%12)+12)%12 });
+  };
+  const stepYear = (dir) => {
+    const v = Math.max(minYM, Math.min(maxYM, curYM + dir * 12));
+    setView({ y: Math.floor(v/12), m: ((v%12)+12)%12 });
+  };
+
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  const firstDow = new Date(Date.UTC(view.y, view.m, 1)).getUTCDay();
+  const daysInMonth = new Date(Date.UTC(view.y, view.m+1, 0)).getUTCDate();
+  const cells = [];
+  for (let i = 0; i < firstDow; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+
+  const inRange = (d) => {
+    const t = parseDate(iso(view.y, view.m, d)).getTime();
+    return t >= startD.getTime() && t <= endD.getTime();
+  };
+
+  return (
+    <React.Fragment>
+      <div className="cal-backdrop" onClick={onClose}></div>
+      <div className="cal" role="dialog" aria-label="Jump to date">
+        <div className="cal-list-label">Transcribed entries</div>
+        <div className="cal-list">
+          {entries.map((e, i) => (
+            <button key={e.date}
+              className={"cal-li" + (e.date === currentDate ? " is-cur" : "")}
+              onClick={() => { onPick(e.date); onClose(); }}>
+              <span className="cal-li-date">{fmtDay(e.date)} {fmtMonth(e.date).slice(0,3)} <em>{String(fmtYear(e.date)).slice(2)}</em></span>
+              <span className="cal-li-event">{e.event}</span>
+            </button>
+          ))}
+        </div>
+        <div className="cal-or">or pick any date</div>
+        <div className="cal-head">
+          <div className="cal-nav-group">
+            <button className="cal-nav" onClick={() => stepYear(-1)} disabled={curYM <= minYM} aria-label="Previous year">«</button>
+            <button className="cal-nav" onClick={() => step(-1)} disabled={curYM <= minYM} aria-label="Previous month">‹</button>
+          </div>
+          <div className="cal-title">{titleCase(MONTHS[view.m])} <span>{view.y}</span></div>
+          <div className="cal-nav-group">
+            <button className="cal-nav" onClick={() => step(1)} disabled={curYM >= maxYM} aria-label="Next month">›</button>
+            <button className="cal-nav" onClick={() => stepYear(1)} disabled={curYM >= maxYM} aria-label="Next year">»</button>
+          </div>
+        </div>
+        <div className="cal-dow">{DOW.map((d,i) => <span key={i}>{d}</span>)}</div>
+        <div className="cal-grid">
+          {cells.map((d, i) => {
+            if (d === null) return <span key={"e"+i} className="cal-cell cal-empty"></span>;
+            const dateStr = iso(view.y, view.m, d);
+            const hasEntry = entryDates.has(dateStr);
+            const isCur = dateStr === currentDate;
+            const ok = inRange(d);
+            return (
+              <button key={dateStr}
+                className={"cal-cell" + (hasEntry ? " has-entry" : "") + (isCur ? " is-cur" : "")}
+                disabled={!ok}
+                onClick={() => { onPick(dateStr); onClose(); }}
+                title={hasEntry ? "Transcribed entry" : "Jump to nearest entry"}>
+                {d}{hasEntry && <span className="cal-mark"></span>}
+              </button>
+            );
+          })}
+        </div>
+        <div className="cal-foot">
+          <span className="cal-key"><span className="cal-mark cal-mark-static"></span> transcribed entry</span>
+          <span className="cal-hint">other dates jump to nearest</span>
+        </div>
+      </div>
+    </React.Fragment>
+  );
+}
+
+// ---------- header ----------
+function Header({ entries, entry, onPrev, onNext, atStart, atEnd, accent, onPick }) {
+  const [calOpen, setCalOpen] = useState(false);
+  return (
+    <header className="hdr">
+      <div className="hdr-left">
+        <div className="hdr-title">This Day in the Pacific War</div>
+        <div className="hdr-sub">CINCPAC GRAYBOOK · RUNNING ESTIMATE & SUMMARY · VOL. I</div>
+      </div>
+
+      <div className="hdr-date">
+        <NavArrow dir="prev" disabled={atStart} onClick={onPrev} />
+        <div className="date-wrap">
+          <button className="datebox" onClick={() => setCalOpen(o => !o)} aria-expanded={calOpen} aria-haspopup="dialog">
+            <div className="date-day">{fmtDay(entry.date)}</div>
+            <div className="date-my">
+              <span className="date-month">{fmtMonth(entry.date)}</span>
+              <span className="date-year">{fmtYear(entry.date)}</span>
+            </div>
+            <div className="date-weekday">{fmtWeekday(entry.date)}</div>
+          </button>
+          <button className="date-jump" onClick={() => setCalOpen(o => !o)} aria-label="Jump to date">
+            <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true">
+              <rect x="3" y="4.5" width="18" height="16" rx="1" fill="none" stroke="currentColor" strokeWidth="1.5"/>
+              <path d="M3 9 H21 M8 2.5 V6 M16 2.5 V6" stroke="currentColor" strokeWidth="1.5"/>
+            </svg>
+            <span>JUMP TO DATE</span>
+          </button>
+          {calOpen && <Calendar entries={entries} currentDate={entry.date}
+                                onPick={onPick} onClose={() => setCalOpen(false)} />}
+        </div>
+        <NavArrow dir="next" disabled={atEnd} onClick={onNext} />
+      </div>
+
+      <div className="hdr-right">
+        <Stamp accent={accent} />
+      </div>
+    </header>
+  );
+}
+
+// ---------- actual panel ----------
+function ActualPanel({ entry, grain, uppercase }) {
+  return (
+    <section className="panel panel-actual" style={{ "--grain": grain }}>
+      <div className="panel-label">
+        <div className="panel-label-row">
+          <span className="panel-kicker">CINCPAC ACTUAL</span>
+          <span className="panel-meta">CINCPAC FILE · VOL. I</span>
+        </div>
+        <div className="panel-title">{entry.place}</div>
+      </div>
+
+      <div className="panel-scroll">
+        <div className={"typed" + (uppercase ? " upper" : "")}>
+          <div className="typed-head">
+            <span>FROM: {entry.command}</span>
+            <span>SECRET — RUNNING SUMMARY</span>
+          </div>
+          {entry.actual.map((p, i) => (
+            <p key={i} className={"typed-p" + (p.degraded ? " typed-p-degraded" : "")}>
+              <span className="lineno">{String(i+1).padStart(2,"0")}</span>
+              {p.text}
+              {p.degraded && <span className="ocr-marker"> [transmission degraded]</span>}
+            </p>
+          ))}
+          <div className="typed-foot">— END OF ENTRY —</div>
+        </div>
+      </div>
+
+      <div className="panel-cite">
+        <span className="cite-dot"></span>
+        <span className="cite-main">SOURCE — GRAYBOOK VOL. I</span>
+        <span className="cite-src">Nimitz Graybook · declassified</span>
+      </div>
+
+      <div className="panel-grain" aria-hidden="true"></div>
+    </section>
+  );
+}
+
+// ---------- note panel ----------
+function NotePanel({ font, data }) {
+  return (
+    <section className="panel panel-note" data-font={font}>
+      <div className="panel-label">
+        <div className="panel-label-row">
+          <span className="panel-kicker">HISTORIAN'S NOTE</span>
+          <span className="note-chip archive">ARCHIVE</span>
+        </div>
+        <div className="panel-title">INTERPRETATION · WHAT HE KNEW, AND WHAT WAS COMING</div>
+      </div>
+
+      <div className="panel-scroll">
+        <div className="note-body">
+          {NOTE_PARTS.map((p, i) => {
+            if (!data[p.key]) return null;
+            const isReal = !!(data.knew && data.didntKnow && data.coming);
+            return (
+              <div className="note-part" key={p.key}>
+                <div className="note-part-label">{p.label}</div>
+                <p className={i === 0 && isReal ? "note-lead" : ""}>{data[p.key]}</p>
+              </div>
+            );
+          })}
+
+          <div className="note-sig">
+            <span className="note-sig-rule"></span>
+            <span>HISTORIAN'S NOTE · ARCHIVE</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ---------- timeline ----------
+function Timeline({ entries, index, onSelect, showMarkers, accent }) {
+  const { start, end } = window.WAR_TIMELINE;
+  const cur = entries[index];
+  const frac = dayFrac(cur.date, start, end);
+
+  const ticks = useMemo(() => {
+    const out = [];
+    let d = parseDate(start);
+    d = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1));
+    const last = parseDate(end);
+    while (d.getTime() <= last.getTime() + 1) {
+      const isoStr = `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,"0")}-01`;
+      out.push({ frac: dayFrac(isoStr, start, end), label: MONTHS[d.getUTCMonth()].slice(0,3) });
+      d = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth()+1, 1));
+    }
+    return out;
+  }, [start, end]);
+
+  return (
+    <footer className="timeline" style={{ "--accent": accent }}>
+      <div className="tl-cap tl-cap-l">
+        <span className="tl-cap-d">07 DEC 1941</span>
+        <span className="tl-cap-t">PEARL HARBOR</span>
+      </div>
+
+      <div className="tl-track-wrap">
+        <div className="tl-track" style={{ "--prog": `${frac*100}%` }}>
+          {ticks.map((t, i) => (
+            <div key={i} className="tl-tick" style={{ left: `${t.frac*100}%` }}>
+              <span className="tl-tick-line"></span>
+              <span className="tl-tick-label">{t.label}</span>
+            </div>
+          ))}
+
+          {showMarkers && entries.map((e, i) => i !== index && (
+            <button key={e.date} className="tl-dot" style={{ left: `${dayFrac(e.date, start, end)*100}%` }}
+                    onClick={() => onSelect(i)}
+                    title={`${fmtDay(e.date)} ${fmtMonth(e.date).slice(0,3)} ${fmtYear(e.date)}`}
+                    aria-label={`Go to ${fmtMonth(e.date)} ${fmtDay(e.date)}`}></button>
+          ))}
+
+          <div className="tl-marker" style={{ left: `${frac*100}%` }}>
+            <span className="tl-marker-flag">{fmtDay(cur.date)} {fmtMonth(cur.date).slice(0,3)}</span>
+            <span className="tl-marker-stem"></span>
+            <span className="tl-marker-head"></span>
+          </div>
+        </div>
+      </div>
+
+      <div className="tl-cap tl-cap-r">
+        <span className="tl-cap-d">01 SEP 1942</span>
+        <span className="tl-cap-t">END VOL. I</span>
+      </div>
+    </footer>
+  );
+}
+
+// ---------- app ----------
+function App() {
+  const entries = window.ENTRIES;
+  const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+
+  const [index, setIndex] = useState(() => {
+    const saved = Number(localStorage.getItem("tdpw_index"));
+    return Number.isInteger(saved) && saved >= 0 && saved < entries.length ? saved : 0;
+  });
+  useEffect(() => { localStorage.setItem("tdpw_index", String(index)); }, [index]);
+
+  const go = useCallback((n) => setIndex(i => Math.max(0, Math.min(entries.length-1, n))), [entries.length]);
+  const prev = useCallback(() => go(index-1), [go, index]);
+  const next = useCallback(() => go(index+1), [go, index]);
+
+  const pickDate = useCallback((dateStr) => {
+    const target = parseDate(dateStr).getTime();
+    let best = 0, bestDiff = Infinity;
+    entries.forEach((e, i) => {
+      const diff = Math.abs(parseDate(e.date).getTime() - target);
+      if (diff < bestDiff) { bestDiff = diff; best = i; }
+    });
+    setIndex(best);
+  }, [entries]);
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
+      if (e.key === "ArrowLeft") prev();
+      else if (e.key === "ArrowRight") next();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [prev, next]);
+
+  useEffect(() => { document.documentElement.style.setProperty("--accent", t.accent); }, [t.accent]);
+
+  const entry = entries[index];
+
+  return (
+    <div className="app">
+      <Header entries={entries} entry={entry} onPrev={prev} onNext={next}
+              atStart={index===0} atEnd={index===entries.length-1}
+              accent={t.accent} onPick={pickDate} />
+
+      <main className="main">
+        <ActualPanel entry={entry} grain={t.grain} uppercase={t.uppercaseActual} />
+        <div className="seam" aria-hidden="true"></div>
+        <NotePanel font={t.noteFont} data={entry.note} />
+      </main>
+
+      <Timeline entries={entries} index={index} onSelect={go}
+                showMarkers={t.showMarkers} accent={t.accent} />
+
+      <TweaksPanel>
+        <TweakSection label="Historian's Note" />
+        <TweakRadio label="Note typeface" value={t.noteFont} options={["serif","sans"]}
+                    onChange={(v)=>setTweak("noteFont", v)} />
+        <TweakSection label="Document" />
+        <TweakSlider label="Paper grain" value={t.grain} min={0} max={1} step={0.05}
+                     onChange={(v)=>setTweak("grain", v)} />
+        <TweakToggle label="Force uppercase entry" value={t.uppercaseActual}
+                     onChange={(v)=>setTweak("uppercaseActual", v)} />
+        <TweakSection label="Interface" />
+        <TweakColor label="Accent" value={t.accent}
+                    options={["#c0392f","#b6883f","#3f7a86","#8a8f99"]}
+                    onChange={(v)=>setTweak("accent", v)} />
+        <TweakToggle label="Timeline event markers" value={t.showMarkers}
+                     onChange={(v)=>setTweak("showMarkers", v)} />
+      </TweaksPanel>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+
+  </script>
+</body>
+</html>

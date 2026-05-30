@@ -1,0 +1,19 @@
+# Dependencies
+2_Scripts/node_modules/
+
+# Environment / secrets
+2_Scripts/.env
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# macOS
+.DS_Store
+
+# Source PDF (122MB — exceeds GitHub's 100MB limit)
+1_Inputs/*.pdf
+
+# Internal Claude planning docs
+docs/superpowers/
