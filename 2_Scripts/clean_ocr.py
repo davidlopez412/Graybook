@@ -248,9 +248,9 @@ def fix_hyphen_breaks(text, date, log):
 
 # ── Text-level: stray punctuation inside / prefixing words ───────────────────
 
-# Embedded-punct pattern: alpha(2+) + [.;:] + alpha(2+)
+# Embedded-punct pattern: alpha(1+) + [.;:] + alpha(1+); combined-length guard inside try_embedded
 # Prefix-punct pattern:   non-alpha-non-alphanumeric + [.;:] + alpha(3+)
-_EMBEDDED_PUNCT_RE = re.compile(r'([a-zA-Z]{2,})([.;:])([a-zA-Z]{2,})')
+_EMBEDDED_PUNCT_RE = re.compile(r'([a-zA-Z]+)([.;:])([a-zA-Z]+)')
 _PREFIX_PUNCT_RE   = re.compile(r'(?<![a-zA-Z0-9])([.;:])([a-zA-Z]{3,})')
 
 
@@ -268,7 +268,7 @@ def fix_stray_punct(text, date, log):
         if all_caps(left) or all_caps(right):
             return m.group(0)
         combined = left + right
-        if valid(combined) and not valid(left) and not valid(right):
+        if len(combined) >= 4 and valid(combined):
             log.append((date, 'stray_punct', m.group(0), combined))
             return combined
         return m.group(0)
