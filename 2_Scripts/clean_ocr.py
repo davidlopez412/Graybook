@@ -74,16 +74,81 @@ def valid(s):
 def all_caps(s):
     return s.isalpha() and s == s.upper() and len(s) > 1
 
+# ── Phrase normalization ──────────────────────────────────────────────────────
+# Pre-pass applied before word tokenisation. Handles garbled sequences that
+# span word boundaries or contain characters the word-level pipeline can't reach.
+# Pairs are matched as plain strings in the order listed; put longer/more-specific
+# variants before shorter ones that share a prefix.
+
+PHRASE_CATALOG = [
+    # RUNNING SUMMARY header variants
+    ('RUNNING SUMI\\JARY OF SITUATION',    'RUNNING SUMMARY OF SITUATION'),
+    ('RUNNING SUMIYIARY OF SITUATION',     'RUNNING SUMMARY OF SITUATION'),
+    ('RUNNING SUW~ARY OF SITUATION',       'RUNNING SUMMARY OF SITUATION'),
+    ('RUNNING Sill~IARY OF SITUATION',     'RUNNING SUMMARY OF SITUATION'),
+    ('RUNNING SID~MARY OF SITUATION',      'RUNNING SUMMARY OF SITUATION'),
+    ('RUNNING SIDKMARY OF SITUATION',      'RUNNING SUMMARY OF SITUATION'),
+    ('RUNNING SUiviWili.RY OF SITUATION',  'RUNNING SUMMARY OF SITUATION'),
+    # SUMMARY standalone variants
+    ('SUMI\\JARY',  'SUMMARY'),
+    ('SUMIYIARY',   'SUMMARY'),
+    ('Sum~arv',     'Summary'),
+    ('Sumr1ary',    'Summary'),
+    ('sumnary',     'summary'),
+    # COMINCH — more specific before less specific
+    ('CoMinch',     'COMINCH'),
+    ('coMINCH',     'COMINCH'),
+    ('Comineh',     'COMINCH'),
+    ('Cominch',     'COMINCH'),
+    # CINCPAC garbles
+    ("CINCF'AC",    'CINCPAC'),
+    ('CINCFAC',     'CINCPAC'),
+    ('CINC~AC',     'CINCPAC'),
+    ('CINCPAO',     'CINCPAC'),
+    ('CINCPAG',     'CINCPAC'),
+    ('CINCPJC',     'CINCPAC'),
+]
+
+
+def fix_phrases(text, date, log):
+    """Verbatim replacement of known garbled phrases, logged per occurrence."""
+    for garbled, correct in PHRASE_CATALOG:
+        if garbled in text:
+            for _ in range(text.count(garbled)):
+                log.append((date, 'phrase_norm', garbled, correct))
+            text = text.replace(garbled, correct)
+    return text
+
+
 # ── Word-level corrections ─────────────────────────────────────────────────────
 
 def fix_stray_symbols(word):
-    """Remove ~ and \\ embedded between alphanumeric chars."""
+    """Remove ~ and \\ embedded between alphanumeric chars.
+    If stripping leaves an invalid word, try inserting each letter of the
+    alphabet at the gap position and accept the first valid result (symbol_repair)."""
     if all_caps(word):
         return word, []
+
+    # Find the first embedded symbol and its position in the original word
+    m = re.search(r'(?<=[a-zA-Z0-9])[~\\](?=[a-zA-Z0-9])', word)
+    if not m:
+        return word, []
+
     cleaned = re.sub(r'(?<=[a-zA-Z0-9])[~\\](?=[a-zA-Z0-9])', '', word)
-    if cleaned != word:
+
+    if valid(cleaned):
         return cleaned, [('stray_symbol', word, cleaned)]
-    return word, []
+
+    # Stripped result is not a valid word — try inserting a letter at the gap
+    gap = m.start()  # position in original; after stripping, gap shrinks by 1
+    insert_pos = gap  # position in cleaned string where the symbol was
+    for letter in 'aeioulnrstbcdfghjkmpqvwxyz':  # vowels first — more likely
+        candidate = cleaned[:insert_pos] + letter + cleaned[insert_pos:]
+        if valid(candidate):
+            return candidate, [('symbol_repair', word, candidate)]
+
+    # Neither stripping nor insertion worked — return stripped form anyway
+    return cleaned, [('stray_symbol', word, cleaned)]
 
 
 def fix_leading_l(word):
@@ -98,20 +163,25 @@ def fix_leading_l(word):
 
 
 def fix_digit_sub(word):
-    """Single-digit substitution: 1→l/I or 0→O, flanked by letters."""
+    """Single-digit substitution: 1→l/I, 0→O, 3→g, 6→b, 8→b/B, flanked by letters."""
     if all_caps(word) or valid(word):
         return word, []
-    # Only attempt when the word has exactly one digit (0 or 1)
-    digits = [(i, ch) for i, ch in enumerate(word) if ch in '01']
+    digits = [(i, ch) for i, ch in enumerate(word) if ch in '01368']
     if len(digits) != 1:
         return word, []
     i, ch = digits[0]
-    # Must be flanked by letters on both sides
     if i == 0 or i == len(word) - 1:
         return word, []
     if not (word[i - 1].isalpha() and word[i + 1].isalpha()):
         return word, []
-    for rep in (['l', 'I'] if ch == '1' else ['O']):
+    replacements = {
+        '1': ['l', 'I'],
+        '0': ['O'],
+        '3': ['g'],
+        '6': ['b'],
+        '8': ['b', 'B'],
+    }
+    for rep in replacements[ch]:
         candidate = word[:i] + rep + word[i + 1:]
         if valid(candidate):
             return candidate, [('digit_sub', word, candidate)]
@@ -180,6 +250,8 @@ WORD_RE = re.compile(r'[a-zA-Z][a-zA-Z0-9~\\]*')
 
 
 def correct_text(date, text, log):
+    # Pass 0: phrase-level normalization (before word tokenisation)
+    text = fix_phrases(text, date, log)
     # Pass 1: multi-token hyphen joining (must run on full text)
     text = fix_hyphen_breaks(text, date, log)
     # Pass 2: per-word corrections
@@ -198,7 +270,11 @@ def main():
     log = []  # (date, rule, original, corrected)
 
     for date in sorted(data):
-        corrected[date] = correct_text(date, data[date], log)
+        entry = data[date]
+        corrected[date] = {
+            'text': correct_text(date, entry['text'], log),
+            'page': entry['page'],
+        }
 
     JSON_OUT.parent.mkdir(parents=True, exist_ok=True)
     JSON_OUT.write_text(
