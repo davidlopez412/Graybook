@@ -6,7 +6,7 @@ Analyze the Nimitz Graybook (8-volume WWII operational diary) and build a "This 
 
 ## Current Status
 
-**v1 is complete and running.** Open `3_Outputs/index.html` in a browser — no server needed. All 227 Vol. I entries (1941-12-07 to 1942-09-03) are navigable. OCR cleaning, narrative truncation, and quality auditing are complete.
+**v1 is complete and running.** Open `3_Outputs/index.html` in a browser — no server needed. All 227 Vol. I entries (1941-12-07 to 1942-09-03) are navigable. OCR cleaning, narrative truncation, quality auditing, page-number extraction, and citation UI are complete. The `ActualPanel` footer shows "SOURCE — GRAYBOOK VOL. I · p. [n]" for every entry.
 
 ---
 
@@ -25,12 +25,14 @@ docs/           audit reports and correction logs
 
 | Script | Purpose |
 |---|---|
+| `extract_running_summary.py` | Extraction from PDF OCR → `graybook_vol1.json` |
 | `clean_ocr.py` | OCR-corrects raw JSON → `graybook_vol1_clean.json` |
 | `build_entries.py` | Structures + truncates cleaned JSON → `entries.js` |
 | `audit_entries.py` | Quality audit: before/after comparison of raw vs displayed entries |
-| `extract_running_summary.py` | Original extraction from PDF OCR → `graybook_vol1.json` |
-| `proxy.js` + `package.json` | Express proxy for live AI calls (not used in v1, kept for future) |
 | `test_build_entries.py` | pytest tests for build_entries.py helpers (34 tests, all passing) |
+| `proxy.js` + `package.json` | Express proxy for live AI calls (not used in v1, kept for future) |
+
+**Dependency:** `pdfplumber` is required for `extract_running_summary.py`. Install with `pip3 install pdfplumber` if missing. Scripts are Python 3.9+ compatible.
 
 ---
 
@@ -39,34 +41,39 @@ docs/           audit reports and correction logs
 ```
 graybook_vol1.json          ← raw OCR extraction (extract_running_summary.py)
        ↓  clean_ocr.py
-graybook_vol1_clean.json    ← conservative OCR corrections (3,340 fixes)
+graybook_vol1_clean.json    ← conservative OCR corrections (3,756 fixes across 208 entries)
        ↓  build_entries.py
 3_Outputs/entries.js        ← 227 structured, truncated, display-ready entries
 ```
 
-### Step 1 — clean_ocr.py
+**JSON format:** Both `graybook_vol1.json` and `graybook_vol1_clean.json` use `{"date": {"text": "...", "page": N}}` — not flat strings. The `page` field is the PDF page where that date entry begins (first occurrence wins).
 
-Reads `graybook_vol1.json`, writes `graybook_vol1_clean.json`. Logs all changes to `docs/ocr_corrections.log`. Uses `/usr/share/dict/words` with suffix stripping (plurals, inflections) for word validation.
+### Step 1 — extract_running_summary.py
+
+Reads `1_Inputs/Nimitz_Graybook Volume 1.pdf`, writes `graybook_vol1.json`. Tracks the PDF page number for each date entry.
+
+### Step 2 — clean_ocr.py
+
+Reads `graybook_vol1.json`, writes `graybook_vol1_clean.json`. Logs all changes to `docs/ocr_corrections.log`. Uses `/usr/share/dict/words` with suffix stripping for word validation. Passes the `page` field through unchanged.
 
 Rules (conservative — never modifies all-caps tokens like CINCPAC, USS):
 1. Strip `~` and `\` embedded between alphanumeric chars
-2. Remove spurious leading lowercase-l before capitals (`lJapanese → Japanese`) — only when the result is a valid word and not all-caps
+2. Remove spurious leading lowercase-l before capitals (`lJapanese → Japanese`)
 3. Replace a single digit `1`/`0` flanked by letters with `l`/`I`/`O` when the result is a valid word
 4. Replace `rn` → `m` when the result is a valid word (OCR misreads `m` as `rn`)
 5. Rejoin line-break hyphens (`separa-ted → separated`) when the combined form is valid
 
-Outcome: 3,340 substitutions across 189 of 227 entries. Transposition correction was evaluated and excluded — too many false positives on OCR fragments and inflected forms not in the system dictionary.
+Transposition correction was evaluated and excluded — too many false positives on OCR fragments and inflected forms not in the system dictionary.
 
-### Step 2 — build_entries.py
+### Step 3 — build_entries.py
 
 Reads `graybook_vol1_clean.json`, writes `3_Outputs/entries.js`.
 
 Key behaviors:
-- **`truncate_to_narrative()`** — many entries had absorbed appended documents (dispatch logs with `DD HHMM UNIT` format, strategic estimates, appendix sections). Truncates at the first structural boundary marker; hard cap of 1,000 words. 38 entries truncated; max dropped from 22,884 → 1,000 words.
-- **`merge_fragments()`** — merges paragraph chunks that start with lowercase/comma, are <8 words, or where the previous chunk lacks terminal punctuation (`.?!`).
-- **`has_ocr_garbage()`** — tags paragraphs `degraded: true` if they contain tildes, non-standard symbol clusters, or mixed-case OCR patterns (e.g. `\b[a-z][A-Z]`, `[A-Z]{2}\.?[a-z]`).
-- **`extract_event()`** — conservative first-line extraction: requires ≥4 chars, starts with alpha, ≥60% alpha ratio, truncated to 60 chars.
-- **Command derivation**: Kimmel ≤ 1941-12-30, Pye = 1941-12-31, Nimitz ≥ 1942-01-01.
+- **Truncation** — entries absorbing dispatch logs, strategic estimates, and appendix sections are cut at the first structural boundary marker; hard cap of 1,000 words. 38 entries truncated; max dropped from 22,884 → 1,000 words.
+- **Fragment merging** — paragraph chunks starting lowercase/comma, under 8 words, or following a chunk without terminal punctuation are merged into the previous paragraph.
+- **Degraded tagging** — paragraphs with tildes, non-standard symbol clusters, or mixed-case OCR patterns are tagged `degraded: true` and rendered at reduced opacity with a `[transmission degraded]` marker.
+- **Command derivation** — Kimmel ≤ 1941-12-30, Pye = 1941-12-31, Nimitz ≥ 1942-01-01.
 - **`place`** is always `""` — no reliable geographic signal in the OCR text.
 
 ### Entry schema (entries.js)
@@ -78,6 +85,7 @@ window.ENTRIES = [
     date:    "1942-06-04",
     event:   "Forewarned by his codebreakers, Nimitz knew",  // first clean line, or ""
     place:   "",
+    page:    42,                                              // PDF page number
     command: "ADM. C. W. NIMITZ, CINCPAC",
     actual:  [{ text: "...", degraded: false }, ...],
     note:    { knew: "...", didntKnow: "...", coming: "..." }
@@ -86,8 +94,6 @@ window.ENTRIES = [
 ]
 ```
 
-- `actual[].degraded` → renders muted at 45% opacity with *[transmission degraded]* marker
-- `note` has real historian prose for 5 key dates; all others have a placeholder in `knew` only
 - `note.didntKnow` and `note.coming` are `""` for placeholder entries — NotePanel skips empty sections
 
 ---
@@ -161,27 +167,6 @@ Verify with: `assert 'p.degraded' in c and 'cal-nav-group' in c` — if either i
 
 ---
 
-## app.jsx Design Decisions
-
-The production `app.jsx` diverges from the `1_Inputs/` reference in four ways:
-
-1. **No live AI** — `HAS_AI`, `callHistorian`, `aiCache`, `runGenerate`, and the auto-generate `useEffect` are all removed. Notes are static (pre-written or placeholder).
-2. **NotePanel simplified** — no status chip logic, no regenerate button, no loading skeleton. Renders `entry.note` directly. Skips empty `didntKnow`/`coming` sections (placeholder entries).
-3. **Drop cap gated** — `note-lead` class (which triggers the serif drop cap) only applied when all three note fields are populated (`isReal = !!(knew && didntKnow && coming)`).
-4. **`actual` format** — paragraphs are `{text, degraded}` objects, not strings. `ActualPanel` renders degraded paragraphs at reduced opacity with an `[transmission degraded]` marker.
-
----
-
-## Dashboard UI Features
-
-- **Navigation**: left/right arrow buttons, keyboard ← → arrows, calendar popover
-- **Calendar**: stepped pagination — `‹`/`›` = 1 month, `«`/`»` = 1 year; year arrows clamp to timeline boundaries
-- **Timeline**: bottom bar shows progress from Pearl Harbor to Sep 1942; clickable dot markers for all 227 entries
-- **Tweaks panel**: activated by `__activate_edit_mode` postMessage — font, grain, accent color, marker toggle (not available in plain file:// mode without the host app)
-- **localStorage**: saves current entry index across page loads (`tdpw_index`)
-
----
-
 ## Historian's Notes
 
 Five dates have hand-written three-paragraph notes (WHAT HE KNEW / WHAT HE DIDN'T YET KNOW / WHAT WAS COMING):
@@ -191,9 +176,7 @@ Five dates have hand-written three-paragraph notes (WHAT HE KNEW / WHAT HE DIDN'
 - 1942-06-04 — Battle of Midway (Nimitz)
 - 1942-08-07 — Guadalcanal landings (Nimitz)
 
-All other entries show: *"Historian's Note coming soon. This entry covers [date]. The full AI interpretation feature will be enabled in a future version."*
-
-The live-AI path (proxy.js + Anthropic API) exists but is not wired in v1. System prompt is hardcoded server-side in `proxy.js` — the three-paragraph structure, historian's voice, and Kimmel/Nimitz distinction never go to the client.
+All other entries show a placeholder in `knew` only; `didntKnow` and `coming` are empty strings.
 
 ---
 
@@ -204,14 +187,14 @@ Reads raw JSON and entries.js, compares before/after on three flags:
 - `too_short < 100 words`
 - `frag_paras > 30%` paragraphs under 10 words
 
-**Final state after all fixes:**
+**Current state:**
 
 | | Raw JSON | Displayed (entries.js) |
 |---|---|---|
-| Clean (0 flags) | 25 (11%) | **115 (51%)** |
-| Minor issues (1–2 flags) | 202 (89%) | 112 (49%) |
+| Clean (0 flags) | 23 (10%) | **115 (51%)** |
+| Minor issues (1–2 flags) | 204 (90%) | 112 (49%) |
 | Significant (3+ flags) | 0 | 0 |
-| Avg words/entry | 1,040 | 319 |
+| Avg words/entry | 1,040 | 323 |
 | Median words/entry | 264 | 245 |
 | Max words/entry | 22,884 | 1,000 |
 
@@ -221,12 +204,19 @@ Full report: `docs/entry_audit.txt` | OCR correction log: `docs/ocr_corrections.
 
 ## Vol. I Extraction Status
 
-- Script: `2_Scripts/extract_running_summary.py`
-- Raw output: `3_Outputs/graybook_vol1.json` — 227 entries, 1941-12-07 to 1942-09-03
-- Known gaps:
-  - Midway gap (May 23–Jun 2, except May 25): suspicious — needs raw page dump to investigate
-  - Other gaps assumed genuine (no entry in the document)
-  - Many long entries had absorbed appended documents (dispatch logs, strategic estimates) — now handled by `truncate_to_narrative()` in build_entries.py
+- 227 entries, 1941-12-07 to 1942-09-03
+- Only gap > 3 days: Aug 15–20 (4 days missing) — assumed genuine
+
+---
+
+## Maintaining project_graybook.md (memory file)
+
+Treat every update as a **rewrite, not an append**. Rules:
+- Hard cap: 15 lines of content (excluding frontmatter)
+- Replace stale status entries — never add alongside them
+- Only include: current state (what's done), active blockers or resolved gotchas, and what's next
+- Cut anything that duplicates CLAUDE.md detail; replace with a pointer ("see CLAUDE.md")
+- Never let it become a second CLAUDE.md
 
 ---
 
@@ -234,6 +224,5 @@ Full report: `docs/entry_audit.txt` | OCR correction log: `docs/ocr_corrections.
 
 - Add more hand-written historian notes (currently only 5 of 227)
 - Wire live AI via `proxy.js` when Anthropic API access is available
-- Investigate the Midway gap (May 23–Jun 2) in the raw PDF
 - Extend to Vol. II and beyond
 - Improve `place` field extraction (currently always blank)
