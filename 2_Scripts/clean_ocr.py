@@ -313,6 +313,38 @@ def fix_allcaps_prefix(text, date, log):
     return _ALLCAPS_PREFIX_RE.sub(try_strip, text)
 
 
+# ── Text-level: adjacent token join (OCR-split words) ─────────────────────────
+
+def fix_adjacent_join(text, date, log):
+    """Join adjacent pure-alpha tokens when their concatenation is a valid word.
+
+    Conditions (all must hold):
+      - Both tokens are pure alpha, 2-8 chars
+      - Neither is individually a valid word (avoids joining 'in' + 'formation')
+      - Combined form is 5+ chars and passes valid()
+    """
+    parts = re.split(r'(\s+)', text)
+    result = []
+    i = 0
+    while i < len(parts):
+        if (i + 2 < len(parts) and
+                re.fullmatch(r'[a-zA-Z]{2,8}', parts[i]) and
+                re.fullmatch(r'\s+', parts[i + 1]) and
+                re.fullmatch(r'[a-zA-Z]{2,8}', parts[i + 2])):
+            w1, w2 = parts[i], parts[i + 2]
+            combined = w1 + w2
+            if (len(combined) >= 5 and
+                    not valid(w1.lower()) and not valid(w2.lower()) and
+                    valid(combined.lower())):
+                log.append((date, 'adjacent_join', f'{w1} {w2}', combined))
+                result.append(combined)
+                i += 3
+                continue
+        result.append(parts[i])
+        i += 1
+    return ''.join(result)
+
+
 # ── Token regex — matches word-like sequences that may contain OCR artifacts ──
 
 WORD_RE = re.compile(r'[a-zA-Z][a-zA-Z0-9~\\]*')
@@ -327,6 +359,8 @@ def correct_text(date, text, log):
     text = fix_stray_punct(text, date, log)
     # Pass 1.7: all-caps leading noise stripping
     text = fix_allcaps_prefix(text, date, log)
+    # Pass 1.9: adjacent token join (split words)
+    text = fix_adjacent_join(text, date, log)
     # Pass 2: per-word corrections
     return WORD_RE.sub(lambda m: correct_word(m.group(0), date, log), text)
 
