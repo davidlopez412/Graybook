@@ -26,6 +26,16 @@ _DISPATCH_PATTERNS = [
     re.compile(r'^\d{5,6}\s+[A-Z]{3,}\s+TO\s+[A-Z]{3,}', re.MULTILINE),  # DDDHHMM UNIT TO UNIT
 ]
 
+# Page-number bleed: -N- optionally followed by whitespace and trailing digits.
+# Pattern uses negative lookbehind to prevent matching date strings like 1941-12-07
+# (where a digit precedes the dash sequence).
+_PAGE_ARTIFACT_RE = re.compile(r'(?<!\d)-\d{1,4}-\s*\d{0,4}')
+
+
+def strip_page_artifacts(text):
+    """Remove inline page-number bleed (e.g. '-6-', '-4- 4', '-2-0301')."""
+    return _PAGE_ARTIFACT_RE.sub(' ', text)
+
 HARD_CAP_WORDS    = 1000  # absolute ceiling — catches absorbed docs with no clear marker
 MIN_DISPATCH_WORDS = 50   # min narrative words before a dispatch marker is trusted
 
@@ -190,12 +200,14 @@ def split_actual(text):
     return [{'text': p, 'degraded': has_ocr_garbage(p)} for p in paras]
 
 
-def build_entry(date, text):
+def build_entry(date, text, page=None):
+    text = strip_page_artifacts(text)           # remove inline page-number bleed
     narrative = truncate_to_narrative(text)
     return {
         'date':    date,
         'event':   extract_event(text),      # use full text — event label is always first line
         'place':   '',
+        'page':    page,
         'command': get_command(date),
         'actual':  split_actual(narrative),  # display only the narrative portion
         'note':    get_note(date),
@@ -207,13 +219,13 @@ def main():
         data = json.load(f)
 
     dates   = sorted(data.keys())
-    entries = [build_entry(d, data[d]) for d in dates]
+    entries = [build_entry(d, data[d]['text'], data[d].get('page')) for d in dates]
 
     degraded_count = sum(
         1 for e in entries for p in e['actual'] if p['degraded']
     )
-    truncated = [(d, len(data[d].split()), sum(len(p['text'].split()) for p in build_entry(d, data[d])['actual']))
-                 for d in dates if len(data[d].split()) > HARD_CAP_WORDS]
+    truncated = [(d, len(data[d]['text'].split()), sum(len(p['text'].split()) for p in build_entry(d, data[d]['text'])['actual']))
+                 for d in dates if len(data[d]['text'].split()) > HARD_CAP_WORDS]
     truncated = [(d, orig, kept) for d, orig, kept in truncated if orig != kept]
 
     with open(OUT_PATH, 'w', encoding='utf-8') as f:

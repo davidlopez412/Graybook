@@ -4,7 +4,111 @@ sys.path.insert(0, os.path.dirname(__file__))
 from build_entries import (
     get_command, extract_event, split_actual,
     is_continuation, merge_fragments, has_ocr_garbage,
+    truncate_to_narrative, HARD_CAP_WORDS, MIN_DISPATCH_WORDS,
 )
+
+
+# ── helpers ──────────────────────────────────────────────────────────────────
+
+def _words(n, seed='word'):
+    """Generate n filler words for building test texts."""
+    return ' '.join(f'{seed}{i}' for i in range(n))
+
+
+def _long_narrative(n=HARD_CAP_WORDS + 200):
+    """Return a block of plain prose words long enough to trigger truncation."""
+    return _words(n, seed='narrative')
+
+
+# --- truncate_to_narrative ---
+
+def test_truncate_short_entry_unchanged():
+    """Entries at or under HARD_CAP_WORDS are returned verbatim."""
+    text = _words(HARD_CAP_WORDS)
+    assert truncate_to_narrative(text) == text
+
+
+def test_truncate_at_estimate_marker():
+    narrative = _words(200, 'narrative')
+    text = narrative + '\nESTIMATE OF THE SITUATION\n' + _words(2000, 'absorbed')
+    result = truncate_to_narrative(text)
+    assert 'ESTIMATE OF THE SITUATION' not in result
+    assert result.startswith('narrative0')
+
+
+def test_truncate_at_appendix_marker():
+    narrative = _words(200, 'narrative')
+    text = narrative + '\nAPPENDIX A\n' + _words(2000, 'absorbed')
+    result = truncate_to_narrative(text)
+    assert 'APPENDIX' not in result
+    assert 'narrative0' in result
+
+
+def test_truncate_at_annex_marker():
+    narrative = _words(200, 'narrative')
+    text = narrative + '\nANNEX B\n' + _words(2000, 'absorbed')
+    result = truncate_to_narrative(text)
+    assert 'ANNEX' not in result
+    assert 'narrative0' in result
+
+
+def test_truncate_at_enclosure_marker():
+    narrative = _words(200, 'narrative')
+    text = narrative + '\nENCLOSURE 1\n' + _words(2000, 'absorbed')
+    result = truncate_to_narrative(text)
+    assert 'ENCLOSURE' not in result
+    assert 'narrative0' in result
+
+
+def test_truncate_at_page_stamp():
+    narrative = _words(200, 'narrative')
+    text = narrative + '\n-6-\n' + _words(2000, 'absorbed')
+    result = truncate_to_narrative(text)
+    assert '-6-' not in result
+    assert 'narrative0' in result
+
+
+def test_truncate_at_continuation_header():
+    narrative = _words(200, 'narrative')
+    text = narrative + '\nRUNNING SUMMARY OF SITUATION (Cont\'d)\n' + _words(2000, 'absorbed')
+    result = truncate_to_narrative(text)
+    assert 'Cont' not in result
+    assert 'narrative0' in result
+
+
+def test_truncate_at_dispatch_after_enough_narrative():
+    """Dispatch marker appearing after MIN_DISPATCH_WORDS should trigger truncation."""
+    narrative = _words(MIN_DISPATCH_WORDS + 10, 'narrative')
+    dispatch = '14 0741 COMNCH some dispatch text ' + _words(2000, 'absorbed')
+    text = narrative + '\n' + dispatch
+    result = truncate_to_narrative(text)
+    assert 'COMNCH' not in result
+    assert 'narrative0' in result
+
+
+def test_truncate_dispatch_too_early_ignored():
+    """Dispatch marker under MIN_DISPATCH_WORDS is ignored; hard cap applies instead."""
+    narrative = _words(MIN_DISPATCH_WORDS - 5, 'narrative')
+    dispatch_and_more = '14 0741 COMNCH ' + _words(HARD_CAP_WORDS + 500, 'absorbed')
+    text = narrative + '\n' + dispatch_and_more
+    result = truncate_to_narrative(text)
+    # Dispatch marker NOT used as boundary, but hard cap still fires
+    assert len(result.split()) == HARD_CAP_WORDS
+
+
+def test_truncate_hard_cap_no_markers():
+    """Long entry with no boundary markers is trimmed to exactly HARD_CAP_WORDS."""
+    text = _words(HARD_CAP_WORDS + 500, 'word')
+    result = truncate_to_narrative(text)
+    assert len(result.split()) == HARD_CAP_WORDS
+
+
+def test_truncate_marker_at_position_zero_not_truncated():
+    """A structural marker at the very start (pos 0) must not reduce entry to empty."""
+    # The guard `if m.start() > 0` prevents truncation at position zero
+    text = 'ESTIMATE OF THE SITUATION\n' + _words(HARD_CAP_WORDS + 100, 'word')
+    result = truncate_to_narrative(text)
+    assert len(result.split()) > 0
 
 
 # --- get_command ---
@@ -170,3 +274,27 @@ def test_split_actual_merges_continuation_before_degraded_check():
     result = split_actual(text)
     assert len(result) == 1
     assert 'continuing' in result[0]['text']
+
+
+# --- strip_page_artifacts ---
+
+def test_strip_page_artifact_inline():
+    """Page number bleed like '-4- 4' is stripped from entry text."""
+    from build_entries import strip_page_artifacts
+    result = strip_page_artifacts('The fleet sortied -4- 4 and made for Pearl.')
+    assert '-4-' not in result
+    assert 'fleet sortied' in result
+    assert 'made for Pearl' in result
+
+def test_strip_page_artifact_with_trailing_digits():
+    """'-2-0301' style bleed (page-dash-date-bleed) is stripped."""
+    from build_entries import strip_page_artifacts
+    result = strip_page_artifacts('The -2-0301 situation was unclear.')
+    assert '-2-0301' not in result
+    assert 'situation' in result
+
+def test_strip_page_artifact_leaves_dates_alone():
+    """Date strings like '1941-12-07' are not affected."""
+    from build_entries import strip_page_artifacts
+    result = strip_page_artifacts('On 1941-12-07 the war began.')
+    assert '1941-12-07' in result
