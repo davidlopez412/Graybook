@@ -246,6 +246,47 @@ def fix_hyphen_breaks(text, date, log):
     return re.sub(r'([a-zA-Z]{2,})-[ \t]*\n[ \t]*([a-zA-Z]{2,})', try_join, text)
 
 
+# ── Text-level: stray punctuation inside / prefixing words ───────────────────
+
+# Embedded-punct pattern: alpha(2+) + [.;:] + alpha(2+)
+# Prefix-punct pattern:   non-alpha-non-alphanumeric + [.;:] + alpha(3+)
+_EMBEDDED_PUNCT_RE = re.compile(r'([a-zA-Z]{2,})([.;:])([a-zA-Z]{2,})')
+_PREFIX_PUNCT_RE   = re.compile(r'(?<![a-zA-Z0-9])([.;:])([a-zA-Z]{3,})')
+
+
+def fix_stray_punct(text, date, log):
+    """Strip stray . ; : from inside or prefixing words when result is a valid word.
+
+    Skips:
+      - All-caps tokens (handled by separate rules)
+      - Tokens where stripping yields a non-word
+      - Abbreviation patterns where both sides are single chars (caught by {2,} guard)
+      - Apostrophe is excluded entirely to preserve possessives and contractions
+    """
+    def try_embedded(m):
+        left, punct, right = m.group(1), m.group(2), m.group(3)
+        if all_caps(left) or all_caps(right):
+            return m.group(0)
+        combined = left + right
+        if valid(combined) and not valid(left) and not valid(right):
+            log.append((date, 'stray_punct', m.group(0), combined))
+            return combined
+        return m.group(0)
+
+    def try_prefix(m):
+        _punct, word = m.group(1), m.group(2)
+        if all_caps(word):
+            return m.group(0)
+        if valid(word):
+            log.append((date, 'stray_punct_prefix', m.group(0), word))
+            return word
+        return m.group(0)
+
+    text = _EMBEDDED_PUNCT_RE.sub(try_embedded, text)
+    text = _PREFIX_PUNCT_RE.sub(try_prefix, text)
+    return text
+
+
 # ── Token regex — matches word-like sequences that may contain OCR artifacts ──
 
 WORD_RE = re.compile(r'[a-zA-Z][a-zA-Z0-9~\\]*')
@@ -256,6 +297,8 @@ def correct_text(date, text, log):
     text = fix_phrases(text, date, log)
     # Pass 1: multi-token hyphen joining (must run on full text)
     text = fix_hyphen_breaks(text, date, log)
+    # Pass 1.5: stray punctuation inside / prefixing words
+    text = fix_stray_punct(text, date, log)
     # Pass 2: per-word corrections
     return WORD_RE.sub(lambda m: correct_word(m.group(0), date, log), text)
 
