@@ -86,10 +86,16 @@ def test_fix_stray_punct_embedded_dot():
     assert 'f.orce' not in result
 
 def test_fix_stray_punct_embedded_colon():
-    """A:t → At when result is valid."""
+    """de:lay → delay when combined result >= 4 chars and valid.
+
+    Single-char combinations like 'A:t' (combined='At', len=2) are intentionally
+    skipped — the combined-length guard (>= 4) prevents false positives on
+    abbreviations like U.S or T.F which have the same structure.
+    """
     log = []
-    result = fix_stray_punct('A:t sea the fleet', '1941-12-09', log)
-    assert 'A:t' not in result
+    result = fix_stray_punct('the de:lay was considerable', '1941-12-09', log)
+    assert 'de:lay' not in result
+    assert 'delay' in result
 
 def test_fix_stray_punct_wha_t():
     """wha.t → what."""
