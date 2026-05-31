@@ -287,6 +287,32 @@ def fix_stray_punct(text, date, log):
     return text
 
 
+# ── Text-level: all-caps prefix noise stripping ────────────────────────────────
+
+# Proper noun whitelist for all-caps prefix stripping (Pattern 4)
+_ALLCAPS_WHITELIST = frozenset({
+    'WALES', 'REPULSE', 'INDIANAPOLIS', 'MINNEAPOLIS', 'PENSACOLA', 'LOUISVILLE',
+    'MIDWAY', 'HAWAII', 'WAKE', 'CAVITE', 'GUAM', 'TARAWA',
+})
+
+_ALLCAPS_PREFIX_RE = re.compile(r'([^A-Za-z0-9\s])([A-Z]{4,})')
+
+
+def fix_allcaps_prefix(text, date, log):
+    """Strip non-alpha noise immediately before a whitelisted all-caps proper noun.
+
+    Example: "REPULSE → REPULSE, ~MIDWAY → MIDWAY.
+    Only fires when the all-caps token exactly matches the whitelist.
+    """
+    def try_strip(m):
+        noise, caps = m.group(1), m.group(2)
+        if caps in _ALLCAPS_WHITELIST:
+            log.append((date, 'allcaps_prefix', m.group(0), caps))
+            return caps
+        return m.group(0)
+    return _ALLCAPS_PREFIX_RE.sub(try_strip, text)
+
+
 # ── Token regex — matches word-like sequences that may contain OCR artifacts ──
 
 WORD_RE = re.compile(r'[a-zA-Z][a-zA-Z0-9~\\]*')
@@ -299,6 +325,8 @@ def correct_text(date, text, log):
     text = fix_hyphen_breaks(text, date, log)
     # Pass 1.5: stray punctuation inside / prefixing words
     text = fix_stray_punct(text, date, log)
+    # Pass 1.7: all-caps leading noise stripping
+    text = fix_allcaps_prefix(text, date, log)
     # Pass 2: per-word corrections
     return WORD_RE.sub(lambda m: correct_word(m.group(0), date, log), text)
 
