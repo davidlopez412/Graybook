@@ -28,11 +28,9 @@ def flag_entry(date, text):
         if valid(combined.lower()) and not valid(left.lower()) and not valid(right.lower()):
             flags['mixed_punct'].append(m.group(0))
 
-    # abbrev_prefix / allcaps_noise: non-alpha noise before 4+ char all-caps run
+    # abbrev_prefix: non-alpha noise before 4+ char all-caps run
     for m in re.finditer(r'[^A-Za-z0-9\s]([A-Z]{4,})', text):
-        token = m.group(0)
-        flags['abbrev_prefix'].append(token)
-        flags['allcaps_noise'].append(token)
+        flags['abbrev_prefix'].append(m.group(0))
 
     # digit_mix: token with 3/6/8 flanked by at least one alpha on each side
     for m in re.finditer(r'[a-zA-Z][a-zA-Z0-9]*[368][a-zA-Z][a-zA-Z0-9]*|[a-zA-Z][a-zA-Z0-9]*[a-zA-Z][368][a-zA-Z0-9]*', text):
@@ -43,7 +41,6 @@ def flag_entry(date, text):
         w1 = re.sub(r'[^a-zA-Z]', '', words[i])
         w2 = re.sub(r'[^a-zA-Z]', '', words[i+1])
         if (2 <= len(w1) <= 8 and 2 <= len(w2) <= 8 and
-                w1.isalpha() and w2.isalpha() and
                 not valid(w1.lower()) and not valid(w2.lower())):
             combined = w1 + w2
             if len(combined) >= 5 and valid(combined.lower()):
@@ -58,14 +55,12 @@ def main():
     dates = sorted(data.keys())
 
     totals  = defaultdict(Counter)   # category → Counter of token
-    by_date = defaultdict(list)      # date → list of (category, token)
 
     for date in dates:
         flags = flag_entry(date, data[date]['text'])
         for cat, tokens in flags.items():
             for t in tokens:
                 totals[cat][t] += 1
-                by_date[date].append((cat, t))
 
     print(f'FLAG REPORT — {path.name}  ({len(dates)} entries)')
     print('=' * 63)
@@ -73,7 +68,7 @@ def main():
     print(header)
     print('-' * 63)
 
-    category_order = ['mixed_punct', 'digit_mix', 'adjacent_split', 'abbrev_prefix', 'allcaps_noise']
+    category_order = ['mixed_punct', 'digit_mix', 'adjacent_split', 'abbrev_prefix']
     for cat in category_order:
         if cat not in totals:
             continue
