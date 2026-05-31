@@ -109,6 +109,7 @@ PHRASE_CATALOG = [
     ('CINCPJC',     'CINCPAC'),
     # Task Force variants
     ('Task Porce',   'Task Force'),
+    ('Task\nPorce',  'Task Force'),
 ]
 
 

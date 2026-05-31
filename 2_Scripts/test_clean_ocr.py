@@ -184,3 +184,28 @@ def test_fix_adjacent_join_min_combined_length():
     # even if 'atbe' were valid (it's not), the length check would prevent it
     result = fix_adjacent_join('at be the', '1942-01-01', log)
     assert isinstance(result, str)  # just verify no crash
+
+
+# ── fix_stray_symbols (symbol_repair path) ────────────────────────────────────
+
+def test_fix_stray_symbols_strip_yields_valid():
+    """Strip ~ between letters yields a valid word → stray_symbol fix."""
+    from clean_ocr import fix_stray_symbols
+    result, changes = fix_stray_symbols('re~move')
+    assert result == 'remove'
+    assert changes[0][0] == 'stray_symbol'
+
+def test_fix_stray_symbols_strip_invalid_repair():
+    """Strip ~ yields invalid word → try letter insertion (symbol_repair)."""
+    from clean_ocr import fix_stray_symbols
+    # 'su~face' → strip → 'suface' (not valid) → insert 'r' → 'surface'
+    result, changes = fix_stray_symbols('su~face')
+    assert result == 'surface'
+    assert changes[0][0] == 'symbol_repair'
+
+def test_fix_stray_symbols_no_change_all_caps():
+    """All-caps tokens are never modified."""
+    from clean_ocr import fix_stray_symbols
+    result, changes = fix_stray_symbols('CINCPAC')
+    assert result == 'CINCPAC'
+    assert changes == []
