@@ -1,4 +1,4 @@
-OCR Corrections — 4510 substitutions across 227 entries
+OCR Corrections — 4512 substitutions across 227 entries
 ========================================================================
 DATE         RULE             ORIGINAL                     CORRECTED
 ------------------------------------------------------------------------
@@ -23,6 +23,8 @@ DATE         RULE             ORIGINAL                     CORRECTED
 1941-12-08   symbol_repair    consider~bly                 considerably
 1941-12-09   hyphen_join      follow-ing                   following
 1941-12-09   hyphen_join      bomb-ing                     bombing
+1941-12-10   phrase_norm      Task
+Porce                   Task Force
 1941-12-10   hyphen_join      pro-tection                  protection
 1941-12-10   stray_punct      wha.t                        what
 1941-12-10   stray_punct_prefix :made                        made
@@ -3530,6 +3532,8 @@ DATE         RULE             ORIGINAL                     CORRECTED
 1942-07-05   stray_symbol     v~1                          v1
 1942-07-07   phrase_norm      Sum~arv                      Summary
 1942-07-07   phrase_norm      Task Porce                   Task Force
+1942-07-07   phrase_norm      Task
+Porce                   Task Force
 1942-07-07   hyphen_join      offen-sive                   offensive
 1942-07-07   hyphen_join      sub-marines                  submarines
 1942-07-07   hyphen_join      occupa-tion                  occupation

@@ -93,21 +93,21 @@ window.ENTRIES = [
   },
   {
     "date": "1941-12-10",
-    "event": "The only change made in disposition this date was that Task",
+    "event": "The only change made in disposition this date was that Task ",
     "place": "",
     "page": 7,
     "command": "ADM. H. E. KIMMEL, CINCPAC",
     "actual": [
       {
-        "text": "The only change made in disposition this date was that Task Porce Twelve \\\"Tas ordered to make Westings in order to expedite action in case plans , which were belng considered for increased protection of I·J.idway and '.'fake, were adopted. This force was attFmpting to fuel but was being delayed on account of rough weather. It was beginning to be seen that all carriers could not be enployed in transporting aircraft from the Coast.",
+        "text": "The only change made in disposition this date was that Task Force Twelve \\\"Tas ordered to make Westings in order to expedite action in case plans , which were belng considered for increased protection of I·J.idway and '.'fake, were adopted. This force was attFmpting to fuel but was being delayed on account of rough weather.",
         "degraded": false
       },
       {
-        "text": "Wake had received three bombings, and on this date repulsed what appeared to be a landing attack by cruisers, destroyers and transports.",
+        "text": "It was beginning to be seen that all carriers could not be enployed in transporting aircraft from the Coast. Wake had received three bombings, and on this date repulsed what appeared to be a landing attack by cruisers, destroyers and transports. Landings were reported on Luzon.",
         "degraded": false
       },
       {
-        "text": "Landings were reported on Luzon. At this time the Estimate, dated December lOth, which follows, was prepared. The tentative plans which are a part of the Estimate are marked with notes as to the action which was taken in regard to them.",
+        "text": "At this time the Estimate, dated December lOth, which follows, was prepared. The tentative plans which are a part of the Estimate are marked with notes as to the action which was taken in regard to them.",
         "degraded": true
       }
     ],
