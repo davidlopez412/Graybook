@@ -110,6 +110,14 @@ PHRASE_CATALOG = [
     # Task Force variants
     ('Task Porce',   'Task Force'),
     ('Task\nPorce',  'Task Force'),
+    # Dec 7 specific OCR artifacts
+    ('1~1hen',        'When'),
+    ('FJ.ar or',      'Harbor'),
+    ('T1:-.._ree',    'Three'),
+    ('IJJDIANAPOLIS', 'INDIANAPOLIS'),
+    ('uni-cs',        'units'),
+    ('liiidvTay',     'Midway'),
+    ('LODISVILLE',    'LOUISVILLE'),
 ]
 
 

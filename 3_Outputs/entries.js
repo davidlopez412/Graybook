@@ -9,8 +9,8 @@ window.ENTRIES = [
     "command": "ADM. H. E. KIMMEL, CINCPAC",
     "actual": [
       {
-        "text": "The war opened with the attack of Japanese aircraft on Oahu. 1~1hen the first Japanese aircraft attacked Pearl FJ.ar or about 0750 LC'I1 forces were distributed , as follows: Task Force T1:-.._ree- IJJDIANAPOLIS, 5 DT1S - at Johnston Island. Task Force Twelve (composed of uni-cs usually part of Task Force Three) - LEXINGTON, Crudiv Four less LODISVILLE, 5 DD - about 500 miles southeast of liiidvTay, enroute to fly off VMSB-231 to Midway.",
-        "degraded": true
+        "text": "The war opened with the attack of Japanese aircraft on Oahu. When the first Japanese aircraft attacked Pearl Harbor about 0750 LC'I1 forces were distributed , as follows: Task Force Three- INDIANAPOLIS, 5 DT1S - at Johnston Island. Task Force Twelve (composed of units usually part of Task Force Three) - LEXINGTON, Crudiv Four less LOUISVILLE, 5 DD - about 500 miles southeast of Midway, enroute to fly off VMSB-231 to Midway.",
+        "degraded": false
       },
       {
         "text": "Task Force Eight (comprising usual Task Force Two less 3 battleships and one desron) - ENTETIPRISE, Crudiv Five less PENSACOLA, 9 DD - returning from transfer of VMF-221 to ·,\"fake - about 200 miles west of Pearl. J.1I1UTEAPOLIS and 3 DMS in operating area south of Oahu. PE1SACOLA (Task Group 15.5) in south Pacific, escorting convoy to Far East.",

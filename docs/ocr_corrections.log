@@ -1,8 +1,15 @@
-OCR Corrections — 4512 substitutions across 227 entries
+OCR Corrections — 4519 substitutions across 227 entries
 ========================================================================
 DATE         RULE             ORIGINAL                     CORRECTED
 ------------------------------------------------------------------------
 1941-12-07   phrase_norm      RUNNING SUMIYIARY OF SITUATION RUNNING SUMMARY OF SITUATION
+1941-12-07   phrase_norm      1~1hen                       When
+1941-12-07   phrase_norm      FJ.ar or                     Harbor
+1941-12-07   phrase_norm      T1:-.._ree                   Three
+1941-12-07   phrase_norm      IJJDIANAPOLIS                INDIANAPOLIS
+1941-12-07   phrase_norm      uni-cs                       units
+1941-12-07   phrase_norm      liiidvTay                    Midway
+1941-12-07   phrase_norm      LODISVILLE                   LOUISVILLE
 1941-12-07   hyphen_join      con-tacts                    contacts
 1941-12-07   hyphen_join      proceed-ing                  proceeding
 1941-12-07   stray_punct      Ta.sk                        Task

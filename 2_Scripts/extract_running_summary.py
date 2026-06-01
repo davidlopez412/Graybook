@@ -37,12 +37,12 @@ FUZZY_SUMMARY_RE  = re.compile(
 DIRECTIVES_RE = re.compile(r'DIRECTIVES\s+AND\s+INFORMATION\s+AFFECTING', re.IGNORECASE)
 PAGE_NUM_RE   = re.compile(r'^\s*-?\d{1,3}-?\s*$')
 
-entries: dict[str, list[str]] = {}
-current_key: str | None = None
-current_lines: list[str] = []
+entries = {}        # {date: {"lines": [], "page": N}}
+current_key = None
+current_lines = []
 in_summary = True   # page 4 is always narrative; start True
 current_year = 1941
-last_month: int | None = None
+last_month = None
 
 
 def flush():
@@ -50,8 +50,8 @@ def flush():
     if current_key and current_lines:
         text = '\n'.join(current_lines).strip()
         if text:
-            entries.setdefault(current_key, [])
-            entries[current_key].append(text)
+            entries.setdefault(current_key, {'lines': [], 'page': None})
+            entries[current_key]['lines'].append(text)
     current_lines = []
 
 
@@ -105,6 +105,9 @@ with pdfplumber.open(PDF_PATH) as pdf:
                     current_key = None
                     continue
 
+                # Record the PDF page where this date entry begins (first occurrence wins)
+                entries.setdefault(current_key, {'lines': [], 'page': page_num})
+
                 # Any text after the date marker on the same line is body text
                 rest = stripped[m.end():].strip()
                 if rest:
@@ -118,7 +121,9 @@ with pdfplumber.open(PDF_PATH) as pdf:
 
 flush()
 
-output = {k: '\n\n'.join(v) for k, v in entries.items()}
+output = {k: {'text': '\n\n'.join(v['lines']), 'page': v['page']}
+          for k, v in entries.items()
+          if v['lines']}
 
 with open(OUTPUT_PATH, 'w', encoding='utf-8') as f:
     json.dump(output, f, indent=2, ensure_ascii=False)

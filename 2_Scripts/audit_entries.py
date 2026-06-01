@@ -22,7 +22,8 @@ def load_entries_js():
 
 def load_raw_json():
     """Return {date: raw_ocr_text} from the source JSON."""
-    return json.load(open(JSON_PATH, encoding='utf-8'))
+    data = json.load(open(JSON_PATH, encoding='utf-8'))
+    return {d: v['text'] for d, v in data.items()}
 
 # Thresholds
 OCR_FLAG_THRESHOLD = 5    # noise score above this → OCR flag

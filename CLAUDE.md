@@ -1,12 +1,17 @@
 # Graybook Project
 
+## Agent Behavior
+
+Do not load planning skills, subagents, or orchestration frameworks.
+Implement directly in a single session. No API calls in scripts.
+
 ## Project Goal
 
 Analyze the Nimitz Graybook (8-volume WWII operational diary) and build a "This Day in the Pacific War" dashboard showing the CINCPAC running summary for each date alongside a historian's interpretation.
 
 ## Current Status
 
-**v1 is complete and running.** Open `3_Outputs/index.html` in a browser — no server needed. All 227 Vol. I entries (1941-12-07 to 1942-09-03) are navigable. OCR cleaning, narrative truncation, quality auditing, page-number extraction, and citation UI are complete. The `ActualPanel` footer shows "SOURCE — GRAYBOOK VOL. I · p. [n]" for every entry.
+**v1 is complete and running.** Open `3_Outputs/index.html` in a browser — no server needed. All 227 Vol. I entries (1941-12-07 to 1942-09-03) are navigable. OCR cleaning, narrative truncation, quality auditing, page-number extraction, and citation UI are complete. The `ActualPanel` footer shows "SOURCE — GRAYBOOK VOL. I · p. [n]" for every entry. Timeline marker CSS was tuned 2026-05-30: the speech-bubble arrow tip (`::after`) was removed and the flag lifted (`bottom: 28px; transform: translateX(-10%)`); both `index.html` and `1_Inputs/This Day in the Pacific War.html` reflect this.
 
 ---
 

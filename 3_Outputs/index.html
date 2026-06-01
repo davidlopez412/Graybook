@@ -61,16 +61,16 @@
     display: grid;
     grid-template-columns: 1fr auto 1fr;
     align-items: center;
-    padding: 18px 30px 16px;
+    padding: 22px 34px 20px;
     border-bottom: 1px solid var(--line);
     background: linear-gradient(180deg, var(--bg-2), var(--bg));
     gap: 24px;
   }
   .hdr-left { min-width: 0; }
   .hdr-title {
-    font-size: 25px;
+    font-size: 22px;
     font-weight: 600;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--ink);
     line-height: 1.05;
@@ -173,7 +173,7 @@
   .date-day {
     grid-area: day;
     font-family: var(--font-ui);
-    font-size: 62px;
+    font-size: 74px;
     font-weight: 300;
     line-height: 0.9;
     letter-spacing: -0.02em;
@@ -183,7 +183,7 @@
   .date-my { grid-area: my; display: flex; flex-direction: column; align-self: end; padding-bottom: 2px; }
   .date-month { font-size: 17px; font-weight: 600; letter-spacing: 0.22em; color: var(--ink); }
   .date-year { font-size: 12px; font-weight: 500; letter-spacing: 0.3em; color: var(--ink-dim); margin-top: 3px; }
-  .date-weekday { grid-area: weekday; align-self: start; font-size: 10px; letter-spacing: 0.42em; color: var(--accent); font-weight: 600; margin-top: 4px; }
+  .date-weekday { grid-area: weekday; align-self: start; font-size: 10px; letter-spacing: 0.42em; color: var(--ink-dim); font-weight: 600; margin-top: 4px; }
 
   .navarrow {
     appearance: none; background: transparent; border: 1px solid var(--line);
@@ -212,52 +212,75 @@
   /* ---------------- MAIN ---------------- */
   .main {
     display: grid;
-    grid-template-columns: 1fr 1px 1fr;
+    grid-template-columns: 1fr 1fr;
     min-height: 0;
     overflow: hidden;
+    padding: 16px 24px 0;
+    gap: 16px;
+    background: var(--bg);
   }
-  .seam { background: var(--line); }
+  .seam { display: none; }
 
   .panel { display: flex; flex-direction: column; min-height: 0; min-width: 0; position: relative; overflow: hidden; }
-  .panel-actual { background: linear-gradient(160deg, var(--paper), var(--paper-2)); }
-  .panel-note { background: var(--panel); }
+  .panel-actual { background: linear-gradient(160deg, var(--paper), var(--paper-2)); border-radius: 4px; overflow: hidden; border: 1px solid var(--line); }
+  .panel-note { background: oklch(0.195 0.010 60); border-radius: 4px; overflow: hidden; border: 1px solid var(--line); }
+
+  .panel-actual .panel-scroll,
+  .panel-note {
+    position: relative;
+  }
+
+  .panel-actual .panel-scroll::after,
+  .panel-note::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 180px 180px;
+    background-repeat: repeat;
+    z-index: 10;
+  }
 
   .panel-label {
-    padding: 16px 34px 14px;
-    border-bottom: 1px solid var(--line-soft);
+    padding: 16px 34px 18px;
     flex: none;
+    position: relative;
+    overflow: hidden;
+    border-bottom: 1px solid var(--line);
   }
   .panel-label-row { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; }
-  .panel-kicker { font-size: 12px; font-weight: 700; letter-spacing: 0.3em; color: var(--ink); }
+  .panel-kicker { font-size: 11px; font-weight: 700; letter-spacing: 0.35em; color: var(--ink); opacity: 1; }
   .panel-note .panel-kicker { color: var(--ink); }
   .panel-meta { font-size: 9.5px; letter-spacing: 0.24em; color: var(--ink-faint); font-weight: 500; white-space: nowrap; }
   .panel-title { margin-top: 7px; font-size: 12px; letter-spacing: 0.2em; color: var(--ink-dim); font-weight: 500; }
 
-  .panel-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 30px 34px 44px; }
+  .panel-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 36px 34px 44px; }
   .panel-scroll::-webkit-scrollbar { width: 10px; }
   .panel-scroll::-webkit-scrollbar-track { background: transparent; }
   .panel-scroll::-webkit-scrollbar-thumb { background: var(--line); border: 3px solid transparent; background-clip: padding-box; border-radius: 10px; }
   .panel-scroll::-webkit-scrollbar-thumb:hover { background: var(--ink-faint); background-clip: padding-box; }
 
   /* typed (left) */
-  .typed { font-family: var(--font-type); color: var(--ink); max-width: 60ch; }
+  .typed { font-family: var(--font-type); color: var(--ink); max-width: 62ch !important; margin: 0 auto; }
   .typed-head {
     display: flex; flex-direction: column; gap: 4px;
     font-size: 11px; letter-spacing: 0.06em; color: var(--ink-dim);
-    padding-bottom: 18px; margin-bottom: 22px; border-bottom: 1px dashed var(--line);
+    padding-bottom: 18px; margin-bottom: 22px;
   }
   .typed-p {
     position: relative;
     font-size: 16px;
-    line-height: 2.0;
-    margin: 0 0 22px;
-    padding-left: 38px;
+    line-height: 1.75;
+    margin: 0 0 28px;
+    padding-left: 28px;
     letter-spacing: 0.01em;
     text-wrap: pretty;
   }
   .typed-p .lineno {
     position: absolute; left: 0; top: 1px;
-    font-size: 11px; color: var(--ink-faint); letter-spacing: 0;
+    font-size: 11px; color: var(--accent); opacity: 0.4; letter-spacing: 0;
     user-select: none;
   }
   .typed.upper .typed-p { text-transform: uppercase; }
@@ -311,15 +334,17 @@
   .note-sig span:last-child { font-size: 9.5px; letter-spacing: 0.26em; color: var(--ink-faint); font-weight: 600; }
 
   /* citation strip under CINCPAC Actual */
+  .panel-note .panel-cite { visibility: hidden; }
   .panel-actual .panel-label, .panel-actual .panel-scroll { position: relative; z-index: 2; }
   .panel-cite {
     position: relative; z-index: 3; flex: none;
     display: flex; align-items: center; gap: 12px;
-    padding: 11px 34px; border-top: 1px solid var(--line-soft);
+    padding: 11px 34px;
     background: oklch(0.165 0.013 70 / 0.55);
+    opacity: 0.75;
   }
   .cite-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex: none; }
-  .cite-main { font-family: var(--font-ui); font-size: 10px; letter-spacing: 0.18em; font-weight: 600; color: var(--ink-dim); }
+  .cite-main { font-family: var(--font-ui); font-size: 10px; letter-spacing: 0.22em; font-weight: 600; color: var(--ink); }
   .cite-src { font-family: var(--font-ui); font-size: 9px; letter-spacing: 0.14em; color: var(--ink-faint); margin-left: auto; font-style: italic; }
 
   /* paper grain on left panel */
@@ -342,12 +367,11 @@
     align-items: center;
     gap: 28px;
     padding: 16px 34px 18px;
-    border-top: 1px solid var(--line);
     background: linear-gradient(0deg, var(--bg-2), var(--bg));
   }
   .tl-cap { display: flex; flex-direction: column; gap: 3px; }
   .tl-cap-r { align-items: flex-end; }
-  .tl-cap-d { font-size: 11px; letter-spacing: 0.16em; color: var(--ink-dim); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .tl-cap-d { font-size: 12px; letter-spacing: 0.16em; color: var(--ink-dim); font-weight: 600; font-variant-numeric: tabular-nums; }
   .tl-cap-t { font-size: 8.5px; letter-spacing: 0.28em; color: var(--ink-faint); font-weight: 500; }
 
   .tl-track-wrap { padding: 18px 8px 4px; }
@@ -359,7 +383,7 @@
 
   .tl-tick { position: absolute; top: 0; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; }
   .tl-tick-line { width: 1px; height: 6px; background: var(--line); margin-top: -2px; }
-  .tl-tick-label { font-size: 7.5px; letter-spacing: 0.14em; color: var(--ink-faint); margin-top: 5px; }
+  .tl-tick-label { font-size: 7.5px; letter-spacing: 0.2em; color: var(--ink-dim); margin-top: 5px; }
 
   .tl-dot {
     appearance: none; border: none; cursor: pointer;
@@ -371,16 +395,12 @@
   }
   .tl-dot:hover { border-color: var(--ink); background: var(--ink-dim); transform: translate(-50%, -50%) scale(1.35); }
 
-  .tl-marker { position: absolute; top: 1px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; z-index: 3; }
+  .tl-marker { position: absolute; top: -8px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; z-index: 3; }
   .tl-marker-flag {
-    position: absolute; bottom: 12px; white-space: nowrap;
+    position: absolute; bottom: 28px; white-space: nowrap;
     font-size: 9px; letter-spacing: 0.12em; font-weight: 700; color: var(--bg);
     background: var(--accent); padding: 3px 7px; border-radius: 2px;
     font-variant-numeric: tabular-nums;
-  }
-  .tl-marker-flag::after {
-    content: ""; position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%);
-    border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 4px solid var(--accent);
   }
   .tl-marker-stem { width: 2px; height: 14px; background: var(--accent); transform: translateY(-7px); }
   .tl-marker-head {
@@ -396,7 +416,7 @@
   }
 
   .hdr { z-index: 2; }
-  .hdr-sub { font-size: 9px; letter-spacing: 0.18em; white-space: nowrap; }
+  .hdr-sub { font-size: 9px; letter-spacing: 0.28em; color: var(--ink-dim); white-space: nowrap; }
   .typed-p { word-wrap: break-word; overflow-wrap: break-word; }
   .typed-p-degraded { opacity: 0.45; }
   .ocr-marker {
@@ -406,6 +426,8 @@
     vertical-align: middle;
   }
   .cal-nav-group { display: flex; gap: 2px; }
+  .panel-actual .panel-scroll { padding-left: 28px; padding-right: 28px; }
+  .panel-actual .panel-title { min-height: 17px; }
 </style>
 </head>
 <body>
@@ -1115,7 +1137,7 @@ function Header({ entries, entry, onPrev, onNext, atStart, atEnd, accent, onPick
     <header className="hdr">
       <div className="hdr-left">
         <div className="hdr-title">This Day in the Pacific War</div>
-        <div className="hdr-sub">CINCPAC GRAYBOOK · RUNNING ESTIMATE & SUMMARY · VOL. I</div>
+        <div className="hdr-sub">CINCPAC GRAYBOOK · VOL. I OF VIII</div>
       </div>
 
       <div className="hdr-date">
@@ -1155,19 +1177,14 @@ function ActualPanel({ entry, grain, uppercase }) {
     <section className="panel panel-actual" style={{ "--grain": grain }}>
       <div className="panel-label">
         <div className="panel-label-row">
-          <span className="panel-kicker">CINCPAC ACTUAL</span>
-          <span className="panel-meta">CINCPAC FILE · VOL. I</span>
+          <span className="panel-kicker">RUNNING SUMMARY OF SITUATION</span>
         </div>
         <div className="panel-title">{entry.place}</div>
       </div>
 
       <div className="panel-scroll">
         <div className={"typed" + (uppercase ? " upper" : "")}>
-          <div className="typed-head">
-            <span>FROM: {entry.command}</span>
-            <span>SECRET — RUNNING SUMMARY</span>
-          </div>
-          {entry.actual.map((p, i) => (
+{entry.actual.map((p, i) => (
             <p key={i} className={"typed-p" + (p.degraded ? " typed-p-degraded" : "")}>
               <span className="lineno">{String(i+1).padStart(2,"0")}</span>
               {p.text}
@@ -1180,8 +1197,7 @@ function ActualPanel({ entry, grain, uppercase }) {
 
       <div className="panel-cite">
         <span className="cite-dot"></span>
-        <span className="cite-main">SOURCE — GRAYBOOK VOL. I · p. {entry.page}</span>
-        <span className="cite-src">Nimitz Graybook · declassified</span>
+        <span className="cite-main">SOURCE — NIMITZ GRAYBOOK VOL. I · p. {entry.page}</span>
       </div>
 
       <div className="panel-grain" aria-hidden="true"></div>
@@ -1190,35 +1206,23 @@ function ActualPanel({ entry, grain, uppercase }) {
 }
 
 // ---------- note panel ----------
-function NotePanel({ font, data }) {
+function NotePanel({ font, data, page }) {
   return (
     <section className="panel panel-note" data-font={font}>
       <div className="panel-label">
         <div className="panel-label-row">
-          <span className="panel-kicker">HISTORIAN'S NOTE</span>
-          <span className="note-chip archive">ARCHIVE</span>
+          <span className="panel-kicker">INCOMING &amp; OUTGOING DISPATCHES</span>
         </div>
-        <div className="panel-title">INTERPRETATION · WHAT HE KNEW, AND WHAT WAS COMING</div>
+        <div className="panel-title">GREEN PAGES · CINCPAC HQ · PEARL HARBOR</div>
       </div>
 
-      <div className="panel-scroll">
-        <div className="note-body">
-          {NOTE_PARTS.map((p, i) => {
-            if (!data[p.key]) return null;
-            const isReal = !!(data.knew && data.didntKnow && data.coming);
-            return (
-              <div className="note-part" key={p.key}>
-                <div className="note-part-label">{p.label}</div>
-                <p className={i === 0 && isReal ? "note-lead" : ""}>{data[p.key]}</p>
-              </div>
-            );
-          })}
+      <div className="panel-scroll" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <span style={{ fontFamily: "var(--font-ui)", fontSize: "11px", letterSpacing: "0.28em", fontVariant: "small-caps", color: "var(--ink-faint)", fontWeight: 600 }}>DISPATCHES — WORK IN PROGRESS</span>
+      </div>
 
-          <div className="note-sig">
-            <span className="note-sig-rule"></span>
-            <span>HISTORIAN'S NOTE · ARCHIVE</span>
-          </div>
-        </div>
+      <div className="panel-cite">
+        <span className="cite-dot"></span>
+        <span className="cite-main">SOURCE — NIMITZ GRAYBOOK VOL. I · p. {page}</span>
       </div>
     </section>
   );
@@ -1259,14 +1263,7 @@ function Timeline({ entries, index, onSelect, showMarkers, accent }) {
             </div>
           ))}
 
-          {showMarkers && entries.map((e, i) => i !== index && (
-            <button key={e.date} className="tl-dot" style={{ left: `${dayFrac(e.date, start, end)*100}%` }}
-                    onClick={() => onSelect(i)}
-                    title={`${fmtDay(e.date)} ${fmtMonth(e.date).slice(0,3)} ${fmtYear(e.date)}`}
-                    aria-label={`Go to ${fmtMonth(e.date)} ${fmtDay(e.date)}`}></button>
-          ))}
-
-          <div className="tl-marker" style={{ left: `${frac*100}%` }}>
+<div className="tl-marker" style={{ left: `${frac*100}%` }}>
             <span className="tl-marker-flag">{fmtDay(cur.date)} {fmtMonth(cur.date).slice(0,3)}</span>
             <span className="tl-marker-stem"></span>
             <span className="tl-marker-head"></span>
@@ -1330,7 +1327,7 @@ function App() {
       <main className="main">
         <ActualPanel entry={entry} grain={t.grain} uppercase={t.uppercaseActual} />
         <div className="seam" aria-hidden="true"></div>
-        <NotePanel font={t.noteFont} data={entry.note} />
+        <NotePanel font={t.noteFont} data={entry.note} page={entry.page} />
       </main>
 
       <Timeline entries={entries} index={index} onSelect={go}
@@ -1349,8 +1346,6 @@ function App() {
         <TweakColor label="Accent" value={t.accent}
                     options={["#c0392f","#b6883f","#3f7a86","#8a8f99"]}
                     onChange={(v)=>setTweak("accent", v)} />
-        <TweakToggle label="Timeline event markers" value={t.showMarkers}
-                     onChange={(v)=>setTweak("showMarkers", v)} />
       </TweaksPanel>
     </div>
   );
