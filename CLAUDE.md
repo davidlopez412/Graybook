@@ -11,7 +11,9 @@ Analyze the Nimitz Graybook (8-volume WWII operational diary) and build a "This 
 
 ## Current Status
 
-**v1 is complete and running.** Open `3_Outputs/index.html` in a browser — no server needed. All 227 Vol. I entries (1941-12-07 to 1942-09-03) are navigable. OCR cleaning, narrative truncation, quality auditing, page-number extraction, and citation UI are complete. The `ActualPanel` footer shows "SOURCE — GRAYBOOK VOL. I · p. [n]" for every entry. Timeline marker CSS was tuned 2026-05-30: the speech-bubble arrow tip (`::after`) was removed and the flag lifted (`bottom: 28px; transform: translateX(-10%)`); both `index.html` and `1_Inputs/This Day in the Pacific War.html` reflect this.
+**v1 is complete and live at https://graybook-lemon.vercel.app/** (auto-deploys from `main`). All 227 Vol. I entries (1941-12-07 to 1942-09-03) are navigable. OCR cleaning, narrative truncation, quality auditing, page-number extraction, and citation UI are complete.
+
+**UI state (2026-05-31):** Both panels have `border: 1px solid var(--line)`, `border-radius: 4px`, `overflow: hidden`. Citation bar reads "SOURCE — NIMITZ GRAYBOOK VOL. I · p. N" on both panels (right panel hidden via `visibility: hidden` until dispatches are wired). Timeline marker: `top: -8px` (clears tick labels), flag centered (no `translateX` offset).
 
 ---
 
@@ -34,8 +36,10 @@ docs/           audit reports and correction logs
 | `clean_ocr.py` | OCR-corrects raw JSON → `graybook_vol1_clean.json` |
 | `build_entries.py` | Structures + truncates cleaned JSON → `entries.js` |
 | `audit_entries.py` | Quality audit: before/after comparison of raw vs displayed entries |
-| `test_build_entries.py` | pytest tests for build_entries.py helpers (34 tests, all passing) |
-| `proxy.js` + `package.json` | Express proxy for live AI calls (not used in v1, kept for future) |
+| `1_Investigation Scripts/flag_ocr.py` | OCR flag investigation script |
+| `2_Tests/test_build_entries.py` | pytest tests for build_entries.py helpers (34 tests, all passing) |
+| `2_Tests/test_clean_ocr.py` | pytest tests for clean_ocr.py |
+| `3_Proxy/proxy.js` + `package.json` | Express proxy for live AI calls (not used in v1, kept for future) |
 
 **Dependency:** `pdfplumber` is required for `extract_running_summary.py`. Install with `pip3 install pdfplumber` if missing. Scripts are Python 3.9+ compatible.
 
@@ -107,10 +111,10 @@ window.ENTRIES = [
 
 | File | Role |
 |---|---|
-| `index.html` | **Generated — do not edit directly.** Self-contained HTML. |
-| `entries.js` | **Generated.** 227 entries as `window.ENTRIES`. |
-| `app.jsx` | React app source. Edit this, then rebuild index.html. |
-| `tweaks-panel.jsx` | UI controls shell. Copied verbatim from `1_Inputs/`. |
+| `index.html` | **Edit directly.** Self-contained HTML with all JSX inlined. Source of truth for the UI. |
+| `entries.js` | **Generated** by `build_entries.py`. 227 entries as `window.ENTRIES`. |
+| `app.jsx` | Legacy JSX source — **do not use to rebuild**; `index.html` has diverged. |
+| `tweaks-panel.jsx` | Legacy UI controls shell — same caveat as `app.jsx`. |
 | `graybook_vol1_clean.json` | OCR-corrected source data. |
 | `graybook_vol1.json` | Original raw OCR output. |
 
@@ -118,57 +122,7 @@ window.ENTRIES = [
 
 The HTML loads React from CDN and compiles JSX in-browser via Babel standalone. Babel's `<script type="text/babel" src="...">` uses XHR to fetch the file — which Chrome blocks from `file://` URLs. Inlining the JSX into `<script type="text/babel">` blocks avoids this. Only `entries.js` stays external (plain `<script src>` tags work fine from `file://`).
 
-### How to rebuild index.html
-
-Run this from the project root after editing `app.jsx` or `tweaks-panel.jsx`:
-
-```python
-python3 -c "
-import pathlib, re
-
-root   = pathlib.Path('.')
-tweaks = (root / '3_Outputs/tweaks-panel.jsx').read_text()
-app    = (root / '3_Outputs/app.jsx').read_text()
-ref    = (root / '1_Inputs/This Day in the Pacific War.html').read_text()
-css    = re.search(r'<style>(.*?)</style>', ref, re.DOTALL).group(1)
-
-extra = '''
-  .hdr { z-index: 2; }
-  .hdr-sub { font-size: 9px; letter-spacing: 0.18em; white-space: nowrap; }
-  .typed-p { word-wrap: break-word; overflow-wrap: break-word; }
-  .typed-p-degraded { opacity: 0.45; }
-  .ocr-marker {
-    font-size: 9.5px; letter-spacing: 0.14em; font-weight: 500;
-    color: var(--ink-faint); margin-left: 8px;
-    font-family: var(--font-ui); font-style: italic;
-    vertical-align: middle;
-  }
-  .cal-nav-group { display: flex; gap: 2px; }
-'''
-
-html = ('<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\" />\n'
-        '<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n'
-        '<title>This Day in the Pacific War</title>\n'
-        '<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\" />\n'
-        '<link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin />\n'
-        '<link href=\"https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap\" rel=\"stylesheet\" />\n'
-        '<style>' + css + extra + '</style>\n</head>\n<body>\n  <div id=\"root\"></div>\n'
-        '  <script src=\"https://unpkg.com/react@18.3.1/umd/react.development.js\" integrity=\"sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L\" crossorigin=\"anonymous\"></script>\n'
-        '  <script src=\"https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js\" integrity=\"sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm\" crossorigin=\"anonymous\"></script>\n'
-        '  <script src=\"https://unpkg.com/@babel/standalone@7.29.0/babel.min.js\" integrity=\"sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y\" crossorigin=\"anonymous\"></script>\n'
-        '  <script src=\"entries.js\"></script>\n'
-        '  <script type=\"text/babel\">\n' + tweaks + '\n  </script>\n'
-        '  <script type=\"text/babel\">\n' + app + '\n  </script>\n</body>\n</html>')
-
-out = root / '3_Outputs/index.html'
-out.write_text(html)
-c = out.read_text()
-assert 'p.degraded' in c and 'cal-nav-group' in c
-print('OK —', len(html), 'chars')
-"
-```
-
-Verify with: `assert 'p.degraded' in c and 'cal-nav-group' in c` — if either is missing, the inlining failed silently.
+> **Warning:** The old rebuild script (assembling from `app.jsx` + `1_Inputs/This Day in the Pacific War.html`) is now stale — running it would overwrite all CSS and UI changes made directly to `index.html` since 2026-05-31. Do not run it.
 
 ---
 
@@ -211,17 +165,6 @@ Full report: `docs/entry_audit.txt` | OCR correction log: `docs/ocr_corrections.
 
 - 227 entries, 1941-12-07 to 1942-09-03
 - Only gap > 3 days: Aug 15–20 (4 days missing) — assumed genuine
-
----
-
-## Maintaining project_graybook.md (memory file)
-
-Treat every update as a **rewrite, not an append**. Rules:
-- Hard cap: 15 lines of content (excluding frontmatter)
-- Replace stale status entries — never add alongside them
-- Only include: current state (what's done), active blockers or resolved gotchas, and what's next
-- Cut anything that duplicates CLAUDE.md detail; replace with a pointer ("see CLAUDE.md")
-- Never let it become a second CLAUDE.md
 
 ---
 
